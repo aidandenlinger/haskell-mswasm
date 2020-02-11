@@ -334,6 +334,10 @@ getInstrType CurrentMemory = do
 getInstrType GrowMemory = do
     Ctx { mems } <- ask 
     if length mems < 1 then throwError MemoryIndexOutOfRange else return $ I32 ==> I32
+{--getInstrType (I32SegmentLoad handle) = return $ HandleType Handle ==> I32
+getInstrType (I64SegmentLoad handle) = return $ HandleType Handle ==> I64
+getInstrType (NewSegment size) = return $ I32 ==> HandleType Handle
+getInstrType (FreeSegment handle) = return $ HandleType Handle ==> empty--}
 getInstrType (I32Const _) = return $ empty ==> I32
 getInstrType (I64Const _) = return $ empty ==> I64
 getInstrType (F32Const _) = return $ empty ==> F32

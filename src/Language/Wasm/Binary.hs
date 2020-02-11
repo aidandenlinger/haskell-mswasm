@@ -502,15 +502,15 @@ instance Serialize (Instruction Natural) where
     put (FReinterpretI BS32) = putWord8 0xBE
     put (FReinterpretI BS64) = putWord8 0xBF
     -- MSWasm instructions
-    put (I32SegmentLoad handle) = putWord8 0xF0 >> put handle
-    put (I64SegmentLoad handle) = putWord8 0xF1 >> put handle
-    put (I32SegmentStore handle val) = putWord8 0xF2 >> put handle >> put val
-    put (I64SegmentStore handle val) = putWord8 0xF3 >> put handle >> put val
-    put (NewSegment size) = putWord8 0xF4 >> put size
-    put (FreeSegment handle) = putWord8 0xF5 >> put handle
-    put (SegmentSlice handle) = putWord8 0xF6 >> put handle
-    put (HandleSegmentLoad handle base bound) = putWord8 0xF7 >> put handle >> put base >> put bound
-    put (HandleSegmentStore dst val) = putWord8 0xF8 >> put dst >> put val
+    put I32SegmentLoad = putWord8 0xF0
+    put I64SegmentLoad = putWord8 0xF1
+    put I32SegmentStore = putWord8 0xF2
+    put I64SegmentStore = putWord8 0xF3
+    put NewSegment = putWord8 0xF4
+    put FreeSegment = putWord8 0xF5
+    put SegmentSlice = putWord8 0xF6
+    put HandleSegmentLoad = putWord8 0xF7
+    put HandleSegmentStore = putWord8 0xF8
 
     get = do
         op <- getWord8
@@ -569,15 +569,15 @@ instance Serialize (Instruction Natural) where
             0x3F -> byteGuard 0x00 >> (return $ CurrentMemory)
             0x40 -> byteGuard 0x00 >> (return $ GrowMemory)
             -- MSWasm instructions
-            0xF0 -> I32SegmentLoad <$> get
-            0xF1 -> I64SegmentLoad <$> get
-            0xF2 -> I32SegmentStore <$> get get
-            0xF3 -> I64SegmentStore <$> get get
-            0xF4 -> return $ NewSegment getSLEB128 32
-            0xF5 -> FreeSegment <$> get
-            0xF6 -> return $ SegmentSlice get (getSLEB128 32) (getSLEB128 32)
-            0xF7 -> return $ HandleSegmentLoad get
-            0xF8 -> HandleSegmentStore <$> get get
+            -- 0xF0 -> I32SegmentLoad <$> get
+            -- 0xF1 -> I64SegmentLoad <$> get
+            -- 0xF2 -> I32SegmentStore <$> get get
+            -- 0xF3 -> I64SegmentStore <$> get get
+            -- 0xF4 -> return $ NewSegment (getSLEB128 32)
+            -- 0xF5 -> FreeSegment <$> get
+            -- 0xF6 -> return $ SegmentSlice get (getSLEB128 32) (getSLEB128 32)
+            -- 0xF7 -> return $ HandleSegmentLoad get
+            -- 0xF8 -> HandleSegmentStore <$> get get
             -- Numeric instructions
             0x41 -> I32Const <$> getSLEB128 32
             0x42 -> I64Const <$> getSLEB128 64
