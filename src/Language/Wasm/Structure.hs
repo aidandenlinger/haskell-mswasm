@@ -17,7 +17,6 @@ module Language.Wasm.Structure (
     ImportDesc(..),
     Instruction(..),
     MemArg(..),
-    Handle(..),
     IUnOp(..),
     IBinOp(..),
     IRelOp(..),
@@ -88,8 +87,6 @@ data FRelOp = FEq | FNe | FLt | FGt | FLe | FGe deriving (Show, Eq, Generic, NFD
 
 data MemArg = MemArg { offset :: Natural, align :: Natural } deriving (Show, Eq, Generic, NFData)
 
---data Handle = Handle { base :: Natural, offset :: Natural, bound :: Natural, isCorrupted :: Natural} deriving (Show, Eq, Generic, NFData)
-
 type LabelIndex = Natural
 type FuncIndex = Natural
 type TypeIndex = Natural
@@ -105,6 +102,8 @@ data ValueType =
     | F64
     | Handle
     deriving (Show, Eq, Generic, NFData)
+
+--data Handle = Handle { base :: Natural, offset :: Natural, bound :: Natural, isCorrupted :: Natural} deriving (Show, Eq, Generic, NFData)
 
 type ResultType = [ValueType]
 type ParamsType = [ValueType]
