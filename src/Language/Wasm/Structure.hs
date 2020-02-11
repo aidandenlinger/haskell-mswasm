@@ -87,6 +87,8 @@ data FRelOp = FEq | FNe | FLt | FGt | FLe | FGe deriving (Show, Eq, Generic, NFD
 
 data MemArg = MemArg { offset :: Natural, align :: Natural } deriving (Show, Eq, Generic, NFData)
 
+data Handle = Handle { base :: Natural, offest :: Natural, bound :: Natural, isCorrupted :: Bool} deriving (Show, Eq, Generic, NFData)
+
 type LabelIndex = Natural
 type FuncIndex = Natural
 type TypeIndex = Natural
@@ -100,6 +102,7 @@ data ValueType =
     | I64
     | F32
     | F64
+    | Handle
     deriving (Show, Eq, Generic, NFData)
 
 type ResultType = [ValueType]
@@ -156,6 +159,16 @@ data Instruction index =
     | I64Store32 MemArg
     | CurrentMemory
     | GrowMemory
+    -- MSWasm instructions
+    | I32SegmentLoad Handle
+    | I64SegmentLoad Handle
+    | I32SegmentStore Handle Word32
+    | I64SegmentStore Handle Word64
+    | NewSegment Word32
+    | FreeSegment Handle
+    | SegmentSlice Handle Word32 Word32
+    | HandleSegmentLoad Handle
+    | HandleSegmentStore Handle
     -- Numeric instructions
     | I32Const Word32
     | I64Const Word64
