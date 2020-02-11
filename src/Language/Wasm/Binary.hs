@@ -491,6 +491,16 @@ instance Serialize (Instruction Natural) where
     put (IReinterpretF BS64) = putWord8 0xBD
     put (FReinterpretI BS32) = putWord8 0xBE
     put (FReinterpretI BS64) = putWord8 0xBF
+    -- MSWasm instructions
+    put (I32SegmentLoad handle) = putWord8 0xF0 >> put handle
+    put (I64SegmentLoad handle) = putWord8 0xF1 >> put handle
+    put (I32SegmentStore handle) = putWord8 0xF2 >> put handle
+    put (I64SegmentStore handle) = putWord8 0xF3 >> put handle
+    put (NewSegment handle) = putWord8 0xF4 >> put handle
+    put (FreeSegment handle) = putWord8 0xF5 >> put handle
+    put (SegmentSlice handle) = putWord8 0xF6 >> put handle
+    put (HandleSegmentLoad handle) = putWord8 0xF7 >> put handle
+    put (HandleSegmentStore handle) = putWord8 0xF8 >> put handle
 
     get = do
         op <- getWord8
