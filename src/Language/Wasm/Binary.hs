@@ -301,6 +301,16 @@ instance Serialize MemArg where
         offset <- getULEB128 32
         return $ MemArg { align, offset }
 
+instance Serialize Handle where
+    put Handle { base, offset, bound, isCorrupted } 
+        = putULEB128 base >> putULEB128 offset >> putULEB128 bound >> putULEB128 isCorrupted
+    get = do
+        base <- getULEB128 32
+        offset <- getULEB128 32
+        bound <- getULEB128 32
+        isCorrupted <- getULEB128 32
+        return $ Handle { base, offset, bound, isCorrupted }
+
 instance Serialize (Instruction Natural) where
     put Unreachable = putWord8 0x00
     put Nop = putWord8 0x01
@@ -494,13 +504,13 @@ instance Serialize (Instruction Natural) where
     -- MSWasm instructions
     put (I32SegmentLoad handle) = putWord8 0xF0 >> put handle
     put (I64SegmentLoad handle) = putWord8 0xF1 >> put handle
-    put (I32SegmentStore handle) = putWord8 0xF2 >> put handle
-    put (I64SegmentStore handle) = putWord8 0xF3 >> put handle
-    put (NewSegment handle) = putWord8 0xF4 >> put handle
+    put (I32SegmentStore handle val) = putWord8 0xF2 >> put handle >> put val
+    put (I64SegmentStore handle val) = putWord8 0xF3 >> put handle >> put val
+    put (NewSegment size) = putWord8 0xF4 >> put size
     put (FreeSegment handle) = putWord8 0xF5 >> put handle
     put (SegmentSlice handle) = putWord8 0xF6 >> put handle
-    put (HandleSegmentLoad handle) = putWord8 0xF7 >> put handle
-    put (HandleSegmentStore handle) = putWord8 0xF8 >> put handle
+    put (HandleSegmentLoad handle base bound) = putWord8 0xF7 >> put handle >> put base >> put bound
+    put (HandleSegmentStore dst val) = putWord8 0xF8 >> put dst >> put val
 
     get = do
         op <- getWord8
@@ -558,6 +568,16 @@ instance Serialize (Instruction Natural) where
             0x3E -> I64Store32 <$> get
             0x3F -> byteGuard 0x00 >> (return $ CurrentMemory)
             0x40 -> byteGuard 0x00 >> (return $ GrowMemory)
+            -- MSWasm instructions
+            0xF0 -> I32SegmentLoad <$> get
+            0xF1 -> I64SegmentLoad <$> get
+            0xF2 -> I32SegmentStore <$> get get
+            0xF3 -> I64SegmentStore <$> get get
+            0xF4 -> return $ NewSegment getSLEB128 32
+            0xF5 -> FreeSegment <$> get
+            0xF6 -> return $ SegmentSlice get (getSLEB128 32) (getSLEB128 32)
+            0xF7 -> return $ HandleSegmentLoad get
+            0xF8 -> HandleSegmentStore <$> get get
             -- Numeric instructions
             0x41 -> I32Const <$> getSLEB128 32
             0x42 -> I64Const <$> getSLEB128 64
