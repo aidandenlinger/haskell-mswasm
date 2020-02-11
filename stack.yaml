@@ -1,6 +1,8 @@
 resolver: lts-12.11
 packages:
 - '.'
-extra-deps: []
+extra-deps:
+  - mtl-2.2.1@sha256:4b5a800fe9edf168fc7ae48c7a3fc2aab6b418ac15be2f1dad43c0f48a494a3b,1749
+  - tasty-hunit-0.9.2@sha256:14f7212e4252fe3148d9a326382f51d39f13cc8c79101c64c7c48230d18cc2f8,1185
 flags: {}
 extra-package-dbs: []
