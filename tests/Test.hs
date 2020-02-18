@@ -39,12 +39,15 @@ toBinary input output = do
     -- Otherwise, print error string
     Left  reason -> putStrLn reason
 
-
 -- | Hardcoded toBinary with exact filepaths so I don't screw that up
 toBinaryHC :: IO ()
-toBinaryHC = do
-  content <- LBS.readFile "/home/aidan/Desktop/testing/test.wat"
-  case Wasm.parse content of
-    Right mod ->
-      LBS.writeFile "/home/aidan/Desktop/testing/bin.wasm" $ Wasm.encodeLazy mod
-    Left reason -> putStrLn reason
+toBinaryHC = toBinary "/home/aidan/Desktop/testing/test.wat"
+                      "/home/aidan/Desktop/testing/bin.wasm"
+
+-- | Takes in a filepath to a binary and outputs the Module representation.
+toModule :: String -> IO ()
+toModule input = do
+  binary <- LBS.readFile input
+  case Wasm.decodeLazy binary of
+    Right mod    -> print mod
+    Left  reason -> putStrLn reason
