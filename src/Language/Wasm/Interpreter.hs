@@ -67,6 +67,7 @@ data Value =
     | VI64 Word64
     | VF32 Float
     | VF64 Double
+    | VHandle Word32 Word32 Word32 Bool
     deriving (Eq, Show)
 
 asInt32 :: Word32 -> Int32
@@ -175,10 +176,11 @@ makeMutGlobal :: Value -> IO GlobalInstance
 makeMutGlobal val = GIMut (getValueType val) <$> newIORef val
 
 getValueType :: Value -> ValueType
-getValueType (VI32 _) = I32
-getValueType (VI64 _) = I64
-getValueType (VF32 _) = F32
-getValueType (VF64 _) = F64
+getValueType (VI32 _)          = I32
+getValueType (VI64 _)          = I64
+getValueType (VF32 _)          = F32
+getValueType (VF64 _)          = F64
+getValueType (VHandle _ _ _ _) = Handle
 
 data ExportInstance = ExportInstance TL.Text ExternalValue deriving (Eq, Show)
 
@@ -246,7 +248,7 @@ makeHostModule st items = do
             in
             let st' = st { funcInstances = funcInstances st <> Vector.fromList instances } in
             (st', inst')
-        
+
         makeHostGlobals :: (Store, ModuleInstance) -> (Store, ModuleInstance)
         makeHostGlobals (st, inst) =
             let globLen = Vector.length $ globalInstances st in
@@ -259,7 +261,7 @@ makeHostModule st items = do
             in
             let st' = st { globalInstances = globalInstances st <> Vector.fromList instances } in
             (st', inst')
-            
+
         makeHostMems :: (Store, ModuleInstance) -> IO (Store, ModuleInstance)
         makeHostMems (st, inst) = do
             let memLen = Vector.length $ memInstances st
@@ -272,7 +274,7 @@ makeHostModule st items = do
                 }
             let st' = st { memInstances = memInstances st <> instances }
             return (st', inst')
-            
+
         makeHostTables :: (Store, ModuleInstance) -> IO (Store, ModuleInstance)
         makeHostTables (st, inst) = do
             let tableLen = Vector.length $ tableInstances st
@@ -386,7 +388,7 @@ calcInstance (Store fs ts ms gs) imps Module {functions, types, tables, mems, gl
             if limitMatch lim limit
             then return idx
             else throwError "incompatible import type"
-    
+
         limitMatch :: Limit -> Limit -> Bool
         limitMatch (Limit n1 m1) (Limit n2 m2) = n1 >= n2 && (isNothing m2 || fromMaybe False ((<=) <$> m1 <*> m2))
 
@@ -411,6 +413,8 @@ getGlobalValue inst store idx =
         GIMut _ ref -> readIORef ref
 
 -- due the validation there can be only these instructions
+
+
 evalConstExpr :: ModuleInstance -> Store -> Expression -> IO Value
 evalConstExpr _ _ [I32Const v] = return $ VI32 v
 evalConstExpr _ _ [I64Const v] = return $ VI64 v
@@ -425,6 +429,8 @@ allocAndInitGlobals inst store globs = Vector.fromList <$> mapM allocGlob globs
         runIniter :: Expression -> IO Value
         -- the spec says get global can ref only imported globals
         -- only they are in store for this moment
+
+
         runIniter = evalConstExpr inst store
 
         allocGlob :: Global -> IO GlobalInstance
@@ -507,7 +513,7 @@ initialize inst Module {elems, datas, start} store = do
             let len = IOVector.length mem
             Monad.when (last > len) $ throwError "data segment does not fit"
             return (from, mem, chunk)
-        
+
         initData :: (Int, IOVector Word8, LBS.ByteString) -> Initialize ()
         initData (from, mem, chunk) =
             mapM_ (\(i,b) -> IOVector.write mem i b) $ zip [from..] $ LBS.unpack chunk
@@ -570,10 +576,11 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
         checkValType _   _        = Nothing
 
         initLocal :: ValueType -> Value
-        initLocal I32 = VI32 0
-        initLocal I64 = VI64 0
-        initLocal F32 = VF32 0
-        initLocal F64 = VF64 0
+        initLocal I32    = VI32 0
+        initLocal I64    = VI64 0
+        initLocal F32    = VF32 0
+        initLocal F64    = VF64 0
+        initLocal Handle = VHandle 0 0 0 False
 
         go :: EvalCtx -> Expression -> IO EvalResult
         go ctx [] = return $ Done ctx
@@ -582,7 +589,7 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
             case res of
                 Done ctx' -> go ctx' rest
                 command -> return command
-        
+
         makeLoadInstr :: (Bits i, Integral i) => EvalCtx -> Natural -> Int -> ([Value] -> i -> EvalResult) -> IO EvalResult
         makeLoadInstr ctx@EvalCtx{ stack = (VI32 v:rest) } offset byteWidth cont = do
             let MemoryInstance { memory = memoryRef } = memInstances store ! (memaddrs moduleInstance ! 0)
@@ -657,7 +664,7 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
                 Nothing -> return Trap
         step ctx (Call fun) = do
             let funInst = funcInstances store ! (funcaddrs moduleInstance ! fromIntegral fun)
-            let ft = Language.Wasm.Interpreter.funcType funInst 
+            let ft = Language.Wasm.Interpreter.funcType funInst
             let args = params ft
             case sequence $ zipWith checkValType args $ reverse $ take (length args) $ stack ctx of
                 Just params -> do
@@ -1020,19 +1027,19 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
             then return Trap
             else return $ Done ctx { stack = VI64 (truncate v) : rest }
         step ctx@EvalCtx{ stack = (VF32 v:rest) } (ITruncFS BS32 BS32) =
-            if isNaN v || isInfinite v || v >= 2^31 || v < -2^31
+            if isNaN v || isInfinite v || v >= 2^31 || v < 2^31
             then return Trap
             else return $ Done ctx { stack = VI32 (asWord32 $ truncate v) : rest }
         step ctx@EvalCtx{ stack = (VF64 v:rest) } (ITruncFS BS32 BS64) =
-            if isNaN v || isInfinite v || v >= 2^31 || v < -2^31
+            if isNaN v || isInfinite v || v >= 2^31 || v < 2^31
             then return Trap
             else return $ Done ctx { stack = VI32 (asWord32 $ truncate v) : rest }
         step ctx@EvalCtx{ stack = (VF32 v:rest) } (ITruncFS BS64 BS32) =
-            if isNaN v || isInfinite v || v >= 2^63 || v < -2^63
+            if isNaN v || isInfinite v || v >= 2^63 || v < 2^63
             then return Trap
             else return $ Done ctx { stack = VI64 (asWord64 $ truncate v) : rest }
         step ctx@EvalCtx{ stack = (VF64 v:rest) } (ITruncFS BS64 BS64) =
-            if isNaN v || isInfinite v || v >= 2^63 || v < -2^63
+            if isNaN v || isInfinite v || v >= 2^63 || v < 2^63
             then return Trap
             else return $ Done ctx { stack = VI64 (asWord64 $ truncate v) : rest }
         step ctx@EvalCtx{ stack = (VI32 v:rest) } I64ExtendUI32 =

@@ -2,60 +2,64 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
-module Language.Wasm.Structure (
-    Module(..),
-    DataSegment(..),
-    ElemSegment(..),
-    StartFunction(..),
-    Export(..),
-    ExportDesc(..),
-    Table(..),
-    Memory(..),
-    Global(..),
-    Function(..),
-    Import(..),
-    ImportDesc(..),
-    Instruction(..),
-    MemArg(..),
-    IUnOp(..),
-    IBinOp(..),
-    IRelOp(..),
-    FUnOp(..),
-    FBinOp(..),
-    FRelOp(..),
-    BitSize(..),
-    TableType(..),
-    ElemType(..),
-    Limit(..),
-    GlobalType(..),
-    FuncType(..),
-    ValueType(..),
-    ParamsType,
-    ResultType,
-    LocalsType,
-    Expression,
-    LabelIndex,
-    FuncIndex,
-    TypeIndex,
-    LocalIndex,
-    GlobalIndex,
-    MemoryIndex,
-    TableIndex,
-    emptyModule,
-    isFuncImport,
-    isTableImport,
-    isMemImport,
-    isGlobalImport
-) where
+module Language.Wasm.Structure
+  ( Module(..)
+  , DataSegment(..)
+  , ElemSegment(..)
+  , StartFunction(..)
+  , Export(..)
+  , ExportDesc(..)
+  , Table(..)
+  , Memory(..)
+  , Global(..)
+  , Function(..)
+  , Import(..)
+  , ImportDesc(..)
+  , Instruction(..)
+  , MemArg(..)
+  , IUnOp(..)
+  , IBinOp(..)
+  , IRelOp(..)
+  , FUnOp(..)
+  , FBinOp(..)
+  , FRelOp(..)
+  , BitSize(..)
+  , TableType(..)
+  , ElemType(..)
+  , Limit(..)
+  , GlobalType(..)
+  , FuncType(..)
+  , ValueType(..)
+  , HandleVal(..)
+  , ParamsType
+  , ResultType
+  , LocalsType
+  , Expression
+  , LabelIndex
+  , FuncIndex
+  , TypeIndex
+  , LocalIndex
+  , GlobalIndex
+  , MemoryIndex
+  , TableIndex
+  , emptyModule
+  , isFuncImport
+  , isTableImport
+  , isMemImport
+  , isGlobalImport
+  )
+where
 
-import Numeric.Natural (Natural)
-import Data.Word (Word32, Word64)
-import qualified Data.ByteString.Lazy as LBS
-import qualified Data.Text.Lazy as TL
-import Control.DeepSeq (NFData)
-import GHC.Generics (Generic)
+import           Numeric.Natural                ( Natural )
+import           Data.Word                      ( Word32
+                                                , Word64
+                                                )
+import qualified Data.ByteString.Lazy          as LBS
+import qualified Data.Text.Lazy                as TL
+import           Control.DeepSeq                ( NFData )
+import           GHC.Generics                   ( Generic )
 
-data BitSize = BS32 | BS64 deriving (Show, Eq, Generic, NFData)
+data BitSize = BS32 | BS64 | BSHandle deriving (Show, Eq, Generic, NFData)
 
 data IUnOp = IClz | ICtz | IPopcnt deriving (Show, Eq, Generic, NFData)
 
@@ -103,7 +107,9 @@ data ValueType =
     | Handle
     deriving (Show, Eq, Generic, NFData)
 
---data Handle = Handle { base :: Natural, offset :: Natural, bound :: Natural, isCorrupted :: Natural} deriving (Show, Eq, Generic, NFData)
+data HandleVal = HandleVal { base :: Natural, offset :: Natural,
+                             bound :: Natural, isCorrupted :: Bool }
+                             deriving (Show, Eq, Generic, NFData)
 
 type ResultType = [ValueType]
 type ParamsType = [ValueType]
@@ -159,16 +165,6 @@ data Instruction index =
     | I64Store32 MemArg
     | CurrentMemory
     | GrowMemory
-    -- MSWasm instructions
-    | I32SegmentLoad
-    | I64SegmentLoad
-    | I32SegmentStore
-    | I64SegmentStore
-    | NewSegment
-    | FreeSegment
-    | SegmentSlice
-    | HandleSegmentLoad
-    | HandleSegmentStore
     -- Numeric instructions
     | I32Const Word32
     | I64Const Word64
@@ -193,6 +189,16 @@ data Instruction index =
     | F64PromoteF32
     | IReinterpretF BitSize
     | FReinterpretI BitSize
+    -- MSWasm instructions
+    | I32SegmentLoad
+    | I64SegmentLoad
+    | I32SegmentStore
+    | I64SegmentStore
+    | NewSegment
+    | FreeSegment
+    | SegmentSlice
+    | HandleSegmentLoad
+    | HandleSegmentStore
     deriving (Show, Eq, Generic, NFData)
 
 type Expression = [Instruction Natural]
@@ -261,19 +267,19 @@ data Import = Import {
 
 isFuncImport :: Import -> Bool
 isFuncImport (Import _ _ (ImportFunc _)) = True
-isFuncImport _ = False
+isFuncImport _                           = False
 
 isTableImport :: Import -> Bool
 isTableImport (Import _ _ (ImportTable _)) = True
-isTableImport _ = False
+isTableImport _                            = False
 
 isMemImport :: Import -> Bool
 isMemImport (Import _ _ (ImportMemory _)) = True
-isMemImport _ = False
+isMemImport _                             = False
 
 isGlobalImport :: Import -> Bool
 isGlobalImport (Import _ _ (ImportGlobal _)) = True
-isGlobalImport _ = False
+isGlobalImport _                             = False
 
 data Module = Module {
     types :: [FuncType],
@@ -289,15 +295,14 @@ data Module = Module {
 } deriving (Show, Eq, Generic, NFData)
 
 emptyModule :: Module
-emptyModule = Module {
-    types = [],
-    functions = [],
-    tables = [],
-    mems = [],
-    globals = [],
-    elems = [],
-    datas = [],
-    start = Nothing,
-    imports = [],
-    exports = []
-}
+emptyModule = Module { types     = []
+                     , functions = []
+                     , tables    = []
+                     , mems      = []
+                     , globals   = []
+                     , elems     = []
+                     , datas     = []
+                     , start     = Nothing
+                     , imports   = []
+                     , exports   = []
+                     }

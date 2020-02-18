@@ -388,6 +388,7 @@ getInstrType (IReinterpretF BS32) = return $ F32 ==> I32
 getInstrType (IReinterpretF BS64) = return $ F64 ==> I64
 getInstrType (FReinterpretI BS32) = return $ I32 ==> F32
 getInstrType (FReinterpretI BS64) = return $ I64 ==> F64
+getInstrType _ = error "Wrong instr or wrong type"
 
 
 replace :: (Eq a) => a -> a -> [a] -> [a]

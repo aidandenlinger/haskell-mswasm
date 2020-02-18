@@ -104,6 +104,7 @@ data TypedExpr
     | ExprI64 (GenFun (Proxy I64))
     | ExprF32 (GenFun (Proxy F32))
     | ExprF64 (GenFun (Proxy F64))
+    | ExprHandle (GenFun (Proxy Handle))
 
 class Producer expr where
     type OutType expr
@@ -114,10 +115,11 @@ class Producer expr where
 instance (ValueTypeable t) => Producer (Loc t) where
     type OutType (Loc t) = Proxy t
     asTypedExpr e = case getValueType (t e) of
-        I32 -> ExprI32 (produce e >> return Proxy)
-        I64 -> ExprI64 (produce e >> return Proxy)
-        F32 -> ExprF32 (produce e >> return Proxy)
-        F64 -> ExprF64 (produce e >> return Proxy)
+        I32    -> ExprI32    (produce e >> return Proxy)
+        I64    -> ExprI64    (produce e >> return Proxy)
+        F32    -> ExprF32    (produce e >> return Proxy)
+        F64    -> ExprF64    (produce e >> return Proxy)
+        Handle -> ExprHandle (produce e >> return Proxy)
         where
             t :: Loc t -> Proxy t
             t _ = Proxy
@@ -130,10 +132,11 @@ instance (ValueTypeable t) => Producer (Loc t) where
 instance (ValueTypeable t) => Producer (Glob t) where
     type OutType (Glob t) = Proxy t
     asTypedExpr e = case getValueType (t e) of
-        I32 -> ExprI32 (produce e >> return Proxy)
-        I64 -> ExprI64 (produce e >> return Proxy)
-        F32 -> ExprF32 (produce e >> return Proxy)
-        F64 -> ExprF64 (produce e >> return Proxy)
+        I32    -> ExprI32    (produce e >> return Proxy)
+        I64    -> ExprI64    (produce e >> return Proxy)
+        F32    -> ExprF32    (produce e >> return Proxy)
+        F64    -> ExprF64    (produce e >> return Proxy)
+        Handle -> ExprHandle (produce e >> return Proxy)
         where
             t :: Glob t -> Proxy t
             t _ = Proxy
@@ -146,10 +149,11 @@ instance (ValueTypeable t) => Producer (Glob t) where
 instance (ValueTypeable t) => Producer (GenFun (Proxy t)) where
     type OutType (GenFun (Proxy t)) = Proxy t
     asTypedExpr e = case getValueType (t e) of
-        I32 -> ExprI32 (produce e >> return Proxy)
-        I64 -> ExprI64 (produce e >> return Proxy)
-        F32 -> ExprF32 (produce e >> return Proxy)
-        F64 -> ExprF64 (produce e >> return Proxy)
+        I32    -> ExprI32    (produce e >> return Proxy)
+        I64    -> ExprI64    (produce e >> return Proxy)
+        F32    -> ExprF32    (produce e >> return Proxy)
+        F64    -> ExprF64    (produce e >> return Proxy)
+        Handle -> ExprHandle (produce e >> return Proxy)
         where
             t :: GenFun (Proxy t) -> Proxy t
             t _ = Proxy
@@ -166,10 +170,11 @@ arg :: (Producer expr) => expr -> GenFun ()
 arg e = produce e >> return ()
 
 getSize :: ValueType -> BitSize
-getSize I32 = BS32
-getSize I64 = BS64
-getSize F32 = BS32
-getSize F64 = BS64
+getSize I32    = BS32
+getSize I64    = BS64
+getSize F32    = BS32
+getSize F64    = BS64
+getSize Handle = BSHandle
 
 type family IsInt i :: Bool where
     IsInt (Proxy I32) = True
@@ -217,42 +222,47 @@ add :: (Producer a, Producer b, OutType a ~ OutType b) => a -> b -> GenFun (OutT
 add a b = do
     produce a
     case asValueType a of
-        I32 -> after [IBinOp BS32 IAdd] (produce b)
-        I64 -> after [IBinOp BS64 IAdd] (produce b)
-        F32 -> after [FBinOp BS32 FAdd] (produce b)
-        F64 -> after [FBinOp BS64 FAdd] (produce b)
+        I32    -> after [IBinOp BS32 IAdd] (produce b)
+        I64    -> after [IBinOp BS64 IAdd] (produce b)
+        F32    -> after [FBinOp BS32 FAdd] (produce b)
+        F64    -> after [FBinOp BS64 FAdd] (produce b)
+        Handle -> error "Handles cannot be added"
 
 inc :: (Consumer a, Producer a, Integral i) => i -> a -> GenFun ()
 inc i a = case asTypedExpr a of
-    ExprI32 e -> a .= (e `add` i32c i)
-    ExprI64 e -> a .= (e `add` i64c i)
-    ExprF32 e -> a .= (e `add` f32c (fromIntegral i))
-    ExprF64 e -> a .= (e `add` f64c (fromIntegral i))
+    ExprI32    e -> a .= (e `add` i32c i)
+    ExprI64    e -> a .= (e `add` i64c i)
+    ExprF32    e -> a .= (e `add` f32c (fromIntegral i))
+    ExprF64    e -> a .= (e `add` f64c (fromIntegral i))
+    ExprHandle e -> error "Handles cannot be incremented"
 
 sub :: (Producer a, Producer b, OutType a ~ OutType b) => a -> b -> GenFun (OutType a)
 sub a b = do
     produce a
     case asValueType a of
-        I32 -> after [IBinOp BS32 ISub] (produce b)
-        I64 -> after [IBinOp BS64 ISub] (produce b)
-        F32 -> after [FBinOp BS32 FSub] (produce b)
-        F64 -> after [FBinOp BS64 FSub] (produce b)
+        I32    -> after [IBinOp BS32 ISub] (produce b)
+        I64    -> after [IBinOp BS64 ISub] (produce b)
+        F32    -> after [FBinOp BS32 FSub] (produce b)
+        F64    -> after [FBinOp BS64 FSub] (produce b)
+        Handle -> error "Handles cannot be subtracted"
 
 dec :: (Consumer a, Producer a, Integral i) => i -> a -> GenFun ()
 dec i a = case asTypedExpr a of
-    ExprI32 e -> a .= (e `sub` i32c i)
-    ExprI64 e -> a .= (e `sub` i64c i)
-    ExprF32 e -> a .= (e `sub` f32c (fromIntegral i))
-    ExprF64 e -> a .= (e `sub` f64c (fromIntegral i))
+    ExprI32 e    -> a .= (e `sub` i32c i)
+    ExprI64 e    -> a .= (e `sub` i64c i)
+    ExprF32 e    -> a .= (e `sub` f32c (fromIntegral i))
+    ExprF64 e    -> a .= (e `sub` f64c (fromIntegral i))
+    ExprHandle e -> error "Handles cannot be decremented"
 
 mul :: (Producer a, Producer b, OutType a ~ OutType b) => a -> b -> GenFun (OutType a)
 mul a b = do
     produce a
     case asValueType a of
-        I32 -> after [IBinOp BS32 IMul] (produce b)
-        I64 -> after [IBinOp BS64 IMul] (produce b)
-        F32 -> after [FBinOp BS32 FMul] (produce b)
-        F64 -> after [FBinOp BS64 FMul] (produce b)
+        I32    -> after [IBinOp BS32 IMul] (produce b)
+        I64    -> after [IBinOp BS64 IMul] (produce b)
+        F32    -> after [FBinOp BS32 FMul] (produce b)
+        F64    -> after [FBinOp BS64 FMul] (produce b)
+        Handle -> error "Handles cannot be multiplied"
 
 div_u :: (Producer a, Producer b, OutType a ~ OutType b, IsInt (OutType a) ~ True) => a -> b -> GenFun (OutType a)
 div_u = iBinOp IDivU
@@ -304,10 +314,11 @@ eq a b = do
     produce a
     produce b
     case asValueType a of
-        I32 -> appendExpr [IRelOp BS32 IEq]
-        I64 -> appendExpr [IRelOp BS64 IEq]
-        F32 -> appendExpr [FRelOp BS32 FEq]
-        F64 -> appendExpr [FRelOp BS64 FEq]
+        I32    -> appendExpr [IRelOp BS32 IEq]
+        I64    -> appendExpr [IRelOp BS64 IEq]
+        F32    -> appendExpr [FRelOp BS32 FEq]
+        F64    -> appendExpr [FRelOp BS64 FEq]
+        Handle -> error "eq not implemented for Handles"
     return Proxy
 
 ne :: (Producer a, Producer b, OutType a ~ OutType b) => a -> b -> GenFun (Proxy I32)
@@ -315,10 +326,11 @@ ne a b = do
     produce a
     produce b
     case asValueType a of
-        I32 -> appendExpr [IRelOp BS32 INe]
-        I64 -> appendExpr [IRelOp BS64 INe]
-        F32 -> appendExpr [FRelOp BS32 FNe]
-        F64 -> appendExpr [FRelOp BS64 FNe]
+        I32    -> appendExpr [IRelOp BS32 INe]
+        I64    -> appendExpr [IRelOp BS64 INe]
+        F32    -> appendExpr [FRelOp BS32 FNe]
+        F64    -> appendExpr [FRelOp BS64 FNe]
+        Handle -> error "ne not implemented for Handles"
     return Proxy
 
 lt_s :: (Producer a, Producer b, OutType a ~ OutType b, IsInt (OutType a) ~ True) => a -> b -> GenFun (Proxy I32)
@@ -504,10 +516,15 @@ load :: (ValueTypeable t, Producer addr, OutType addr ~ Proxy I32, Integral offs
 load t addr offset align = do
     produce addr
     case getValueType t of
-        I32 -> appendExpr [I32Load $ MemArg (fromIntegral offset) (fromIntegral align)]
-        I64 -> appendExpr [I64Load $ MemArg (fromIntegral offset) (fromIntegral align)]
-        F32 -> appendExpr [F32Load $ MemArg (fromIntegral offset) (fromIntegral align)]
-        F64 -> appendExpr [F64Load $ MemArg (fromIntegral offset) (fromIntegral align)]
+        I32    -> appendExpr 
+          [I32Load $ MemArg (fromIntegral offset) (fromIntegral align)]
+        I64    -> appendExpr 
+          [I64Load $ MemArg (fromIntegral offset) (fromIntegral align)]
+        F32    -> appendExpr 
+          [F32Load $ MemArg (fromIntegral offset) (fromIntegral align)]
+        F64    -> appendExpr 
+          [F64Load $ MemArg (fromIntegral offset) (fromIntegral align)]
+        Handle -> error "load not implemented for Handles"
     return Proxy
 
 load8_u :: (ValueTypeable t, IsInt (Proxy t) ~ True, Producer addr, OutType addr ~ Proxy I32, Integral offset, Integral align)
@@ -602,6 +619,7 @@ store addr val offset align = do
         I64 -> appendExpr [I64Store $ MemArg (fromIntegral offset) (fromIntegral align)]
         F32 -> appendExpr [F32Store $ MemArg (fromIntegral offset) (fromIntegral align)]
         F64 -> appendExpr [F64Store $ MemArg (fromIntegral offset) (fromIntegral align)]
+        Handle -> error "store not implemented for Handles"
 
 store8 :: (Producer addr, OutType addr ~ Proxy I32, Producer val, IsInt (OutType val) ~ True, Integral offset, Integral align)
     => addr
