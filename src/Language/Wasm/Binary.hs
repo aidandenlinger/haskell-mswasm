@@ -503,6 +503,7 @@ instance Serialize (Instruction Natural) where
     put SegmentSlice = putWord8 0xF6
     put HandleSegmentLoad = putWord8 0xF7
     put HandleSegmentStore = putWord8 0xF8
+    put _ = error "Undefined instruction or type"
 
     get = do
         op <- getWord8

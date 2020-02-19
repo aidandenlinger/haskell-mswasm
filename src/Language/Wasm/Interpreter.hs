@@ -1027,19 +1027,19 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
             then return Trap
             else return $ Done ctx { stack = VI64 (truncate v) : rest }
         step ctx@EvalCtx{ stack = (VF32 v:rest) } (ITruncFS BS32 BS32) =
-            if isNaN v || isInfinite v || v >= 2^31 || v < 2^31
+            if isNaN v || isInfinite v || v >= 2^31 || v < -2^31
             then return Trap
             else return $ Done ctx { stack = VI32 (asWord32 $ truncate v) : rest }
         step ctx@EvalCtx{ stack = (VF64 v:rest) } (ITruncFS BS32 BS64) =
-            if isNaN v || isInfinite v || v >= 2^31 || v < 2^31
+            if isNaN v || isInfinite v || v >= 2^31 || v < -2^31
             then return Trap
             else return $ Done ctx { stack = VI32 (asWord32 $ truncate v) : rest }
         step ctx@EvalCtx{ stack = (VF32 v:rest) } (ITruncFS BS64 BS32) =
-            if isNaN v || isInfinite v || v >= 2^63 || v < 2^63
+            if isNaN v || isInfinite v || v >= 2^63 || v < -2^63
             then return Trap
             else return $ Done ctx { stack = VI64 (asWord64 $ truncate v) : rest }
         step ctx@EvalCtx{ stack = (VF64 v:rest) } (ITruncFS BS64 BS64) =
-            if isNaN v || isInfinite v || v >= 2^63 || v < 2^63
+            if isNaN v || isInfinite v || v >= 2^63 || v < -2^63
             then return Trap
             else return $ Done ctx { stack = VI64 (asWord64 $ truncate v) : rest }
         step ctx@EvalCtx{ stack = (VI32 v:rest) } I64ExtendUI32 =
