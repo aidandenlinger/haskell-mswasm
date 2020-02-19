@@ -304,6 +304,10 @@ import Language.Wasm.Lexer (
 'offset'              { Lexeme _ (TKeyword "offset") }
 'start'               { Lexeme _ (TKeyword "start") }
 'module'              { Lexeme _ (TKeyword "module") }
+-- ms-wasm extension
+'i32.segment_load'    { Lexeme _ (TKeyword "i32.segment_load") }
+'i64.segment_load'    { Lexeme _ (TKeyword "i64.segment_load") }
+-- end ms-wasm extension
 -- script extension
 'binary'              { Lexeme _ (TKeyword "binary") }
 'quote'               { Lexeme _ (TKeyword "quote") }
@@ -567,6 +571,9 @@ plaininstr :: { PlainInstr }
     | 'i64.reinterpret/f64'          { IReinterpretF BS64 }
     | 'f32.reinterpret/i32'          { FReinterpretI BS32 }
     | 'f64.reinterpret/i64'          { FReinterpretI BS64 }
+    -- MSWasm instructions
+    | 'i32.segment_load'             { I32SegmentLoad }
+    | 'i64.segment_load'             { I64SegmentLoad }
 
 typeuse :: { TypeUse }
     : '(' typeuse1 { $2 }
@@ -1293,6 +1300,9 @@ data PlainInstr =
     | F64PromoteF32
     | IReinterpretF BitSize
     | FReinterpretI BitSize
+    -- MSWasm instructions
+    | I32SegmentLoad
+    | I64SegmentLoad
     deriving (Show, Eq, Generic, NFData)
 
 data TypeDef = TypeDef (Maybe Ident) FuncType deriving (Show, Eq, Generic, NFData)
@@ -1724,6 +1734,10 @@ desugarize fields = do
         synInstrToStruct _ (PlainInstr F64PromoteF32) = return $ S.F64PromoteF32
         synInstrToStruct _ (PlainInstr (IReinterpretF sz)) = return $ S.IReinterpretF sz
         synInstrToStruct _ (PlainInstr (FReinterpretI sz)) = return $ S.FReinterpretI sz
+        -- MSWasm
+        synInstrToStruct _ (PlainInstr I32SegmentLoad) = return $ S.I32SegmentLoad
+        synInstrToStruct _ (PlainInstr I64SegmentLoad) = return $ S.I64SegmentLoad
+        -- End MS-Wasm
         synInstrToStruct ctx BlockInstr {label, resultType, body} =
             let ctx' = ctx { ctxLabels = label : ctxLabels ctx } in
             S.Block resultType <$> mapM (synInstrToStruct ctx') body
