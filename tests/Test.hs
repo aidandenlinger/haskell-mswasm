@@ -28,6 +28,8 @@ main = do
   defaultMain $ testGroup "Wasm Core Test Suit" scriptTestCases
 
 -- | Basic function to take in filepaths to WasmText input and output binary
+--   run 'stack ghci tests/Test.hs' to run this function
+--   use 'xxd -b path-to-bin' to examine the binary, or toModule to go back
 toBinary :: String -> String -> IO ()
 toBinary input output = do
   -- read the text file into a lazy bytestring buffer
@@ -39,10 +41,16 @@ toBinary input output = do
     -- Otherwise, print error string
     Left  reason -> putStrLn reason
 
--- | Hardcoded toBinary with exact filepaths so I don't screw that up
+-- | Hardcoded toBinary with exact filepaths, run from root dir
 toBinaryHC :: IO ()
-toBinaryHC = toBinary "/home/aidan/Desktop/testing/test.wat"
-                      "/home/aidan/Desktop/testing/bin.wasm"
+toBinaryHC =
+  toBinary "./tests/toBinaryTest/test.wat" "./tests/toBinaryTest/bin.wasm"
+
+-- | Hardcoded toBinary to take in the filename (not filepath!) of a wat file in
+--   toBinaryTest, outputs to bin.wasm in toBinaryTest
+toBinaryTest :: String -> IO ()
+toBinaryTest input =
+  toBinary ("./tests/toBinaryTest/" ++ input) "./tests/toBinaryTest/bin.wasm"
 
 -- | Takes in a filepath to a binary and outputs the Module representation.
 toModule :: String -> IO ()
@@ -51,3 +59,7 @@ toModule input = do
   case Wasm.decodeLazy binary of
     Right mod    -> print mod
     Left  reason -> putStrLn reason
+
+-- | Hardcoded toModule to examine the binary bin.wasm in toBinaryTest
+toModuleHC :: IO ()
+toModuleHC = toModule "./tests/toBinaryTest/bin.wasm"
