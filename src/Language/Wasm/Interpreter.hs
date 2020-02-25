@@ -1074,6 +1074,8 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
             return $ Done ctx { stack = VF32 (wordToFloat v) : rest }
         step ctx@EvalCtx{ stack = (VI64 v:rest) } (FReinterpretI BS64) =
             return $ Done ctx { stack = VF64 (wordToDouble v) : rest }
+        -- MS-Wasm step instructions
+        step EvalCtx{ stack } NewSegment = error "Evaluating new segment"
         step EvalCtx{ stack } instr = error $ "Error during evaluation of instruction: " ++ show instr ++ ". Stack " ++ show stack
 eval _ _ HostInstance { funcType, hostCode } args = Just <$> hostCode args
 

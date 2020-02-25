@@ -115,6 +115,7 @@ import Language.Wasm.Lexer (
 'i64'                 { Lexeme _ (TKeyword "i64") }
 'f32'                 { Lexeme _ (TKeyword "f32") }
 'f64'                 { Lexeme _ (TKeyword "f64") }
+'handle'              { Lexeme _ (TKeyword "handle" )}
 'mut'                 { Lexeme _ (TKeyword "mut") }
 'anyfunc'             { Lexeme _ (TKeyword "anyfunc") }
 'type'                { Lexeme _ (TKeyword "type") }
@@ -361,6 +362,7 @@ valtype :: { ValueType }
     | 'i64' { I64 }
     | 'f32' { F32 }
     | 'f64' { F64 }
+    | 'handle' { Handle }
 
 index :: { Index }
     : u32 { Index $1 }
