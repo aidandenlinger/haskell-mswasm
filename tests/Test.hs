@@ -39,10 +39,10 @@ toBinary input output = do
     -- Otherwise, print error string
     Left  reason -> putStrLn reason
 
--- | Hardcoded toBinary with exact filepaths so I don't screw that up
+-- | Hardcoded toBinary with exact filepaths, run from root dir
 toBinaryHC :: IO ()
-toBinaryHC = toBinary "/home/aidan/Desktop/testing/test.wat"
-                      "/home/aidan/Desktop/testing/bin.wasm"
+toBinaryHC =
+  toBinary "./tests/toBinaryTest/test.wat" "./tests/toBinaryTest/bin.wasm"
 
 -- | Takes in a filepath to a binary and outputs the Module representation.
 toModule :: String -> IO ()
