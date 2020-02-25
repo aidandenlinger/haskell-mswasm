@@ -307,6 +307,13 @@ import Language.Wasm.Lexer (
 -- ms-wasm extension
 'i32.segment_load'    { Lexeme _ (TKeyword "i32.segment_load") }
 'i64.segment_load'    { Lexeme _ (TKeyword "i64.segment_load") }
+'i32.segment_store'   { Lexeme _ (TKeyword "i32.segment_store") }
+'i64.segment_store'   { Lexeme _ (TKeyword "i64.segment_store") }
+'new_segment'         { Lexeme _ (TKeyword "new_segment") }
+'free_segment'        { Lexeme _ (TKeyword "free_segment") }
+'segment_slice'       { Lexeme _ (TKeyword "segment_slice") }
+'handle.segment_load' { Lexeme _ (TKeyword "handle.segment_load") }
+'handle.segment_store'{ Lexeme _ (TKeyword "handle.segment_store") }
 -- end ms-wasm extension
 -- script extension
 'binary'              { Lexeme _ (TKeyword "binary") }
@@ -574,6 +581,13 @@ plaininstr :: { PlainInstr }
     -- MSWasm instructions
     | 'i32.segment_load'             { I32SegmentLoad }
     | 'i64.segment_load'             { I64SegmentLoad }
+    | 'i32.segment_store'            { I32SegmentStore }
+    | 'i64.segment_store'            { I64SegmentStore }
+    | 'new_segment'                  { NewSegment }
+    | 'free_segment'                 { FreeSegment }
+    | 'segment_slice'                { SegmentSlice }
+    | 'handle.segment_load'          { HandleSegmentLoad }
+    | 'handle.segment_store'         { HandleSegmentStore }
 
 typeuse :: { TypeUse }
     : '(' typeuse1 { $2 }
@@ -1303,6 +1317,13 @@ data PlainInstr =
     -- MSWasm instructions
     | I32SegmentLoad
     | I64SegmentLoad
+    | I32SegmentStore
+    | I64SegmentStore
+    | NewSegment
+    | FreeSegment
+    | SegmentSlice
+    | HandleSegmentLoad
+    | HandleSegmentStore
     deriving (Show, Eq, Generic, NFData)
 
 data TypeDef = TypeDef (Maybe Ident) FuncType deriving (Show, Eq, Generic, NFData)
@@ -1737,6 +1758,13 @@ desugarize fields = do
         -- MSWasm
         synInstrToStruct _ (PlainInstr I32SegmentLoad) = return $ S.I32SegmentLoad
         synInstrToStruct _ (PlainInstr I64SegmentLoad) = return $ S.I64SegmentLoad
+        synInstrToStruct _ (PlainInstr I32SegmentStore) = return $ S.I32SegmentStore
+        synInstrToStruct _ (PlainInstr I64SegmentStore) = return $ S.I64SegmentStore
+        synInstrToStruct _ (PlainInstr NewSegment) = return $ S.NewSegment
+        synInstrToStruct _ (PlainInstr FreeSegment) = return $ S.FreeSegment
+        synInstrToStruct _ (PlainInstr SegmentSlice) = return $ S.SegmentSlice
+        synInstrToStruct _ (PlainInstr HandleSegmentLoad) = return $ S.HandleSegmentLoad
+        synInstrToStruct _ (PlainInstr HandleSegmentLoad) = return $ S.HandleSegmentLoad
         -- End MS-Wasm
         synInstrToStruct ctx BlockInstr {label, resultType, body} =
             let ctx' = ctx { ctxLabels = label : ctxLabels ctx } in
