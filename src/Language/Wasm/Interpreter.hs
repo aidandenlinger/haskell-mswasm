@@ -97,6 +97,12 @@ newSegment mem key val =
                                          , size     = size mem }
         _               -> error "type error: newSegment"
 
+storeToSegment :: SegmentMemory -> Value -> Value -> SegmentMemory
+storeToSegment mem key val =
+    case key of
+        VHandle x y z b -> Map.adjust key val (segments mem)
+        _               -> error "type error: storeToSegment"
+
 -- end MS-Wasm interpreter functions
 
 
@@ -1113,9 +1119,8 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
             return $ Done ctx { stack = loadFromSegment segmem (VHandle w x y z) : rest }
         step ctx@EvalCtx { stack = (VHandle w x y z : rest), segmem } I64SegmentLoad =
             return $ Done ctx { stack = loadFromSegment segmem (VHandle w x y z) : rest }
-        step EvalCtx{ stack = (VHandle w x y z : VI32 v : rest) } I32SegmentStore =
-            error $ "i32.segment_store: Store i32 " ++ show v ++ " to handle (" ++ show w ++ ", " 
-              ++ show x ++ ", " ++ show y ++ ", " ++ show z ++ ")"
+        step ctx@EvalCtx{ stack = (VHandle w x y z : VI32 v : rest), segmem } I32SegmentStore =
+            return $ Done ctx { stack = rest, segmem = storeToSegment segmem (VHandle w x y z) (VI32 v) }
         step EvalCtx{ stack = (VHandle w x y z : VI64 v : rest) } I64SegmentStore =
             error $ "i64.segment_store: Store i64 " ++ show v ++ " to handle (" ++ show w ++ ", " 
               ++ show x ++ ", " ++ show y ++ ", " ++ show z ++ ")"
