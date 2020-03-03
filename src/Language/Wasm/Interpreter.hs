@@ -70,6 +70,39 @@ data Value =
     | VHandle Word32 Word32 Word32 Bool
     deriving (Eq, Show)
 
+-- MS-Wasm segment memory handling
+data SegmentMemory = SegmentMemory { segments  :: Map.Map Value Value 
+                                   , size      :: Int }
+
+loadFromSegment :: SegmentMemory -> Value -> Value
+loadFromSegment mem key =
+    case key of
+        VHandle x y z b -> case Map.lookup key (segments mem) of
+                             Just val -> val
+                             Nothing  -> error "Segment not found"
+        _               -> error "type error: loadFromSegment"
+
+freeSegment :: SegmentMemory -> Value -> SegmentMemory
+freeSegment mem key =
+    case key of
+        VHandle x y z b -> SegmentMemory { segments = case Map.delete key (segments mem) of
+                                                          Just map -> map
+                                                          Nothing  -> error "Segment not found"
+                                         , size     = size mem }
+        _               -> error "type error: freeSegment"
+
+newSegment :: SegmentMemory -> Value -> Value -> SegmentMemory
+newSegment mem key val =
+    case key of
+        VHandle x y z b -> SegmentMemory { segments = case Map.insert key val (segments mem) of
+                                                          Just map -> map
+                                                          Nothing  -> error "Segment not found" 
+                                         , size     = size mem }
+        _               -> error "type error: newSegment"
+
+-- end MS-Wasm interpreter functions
+
+
 asInt32 :: Word32 -> Int32
 asInt32 w =
     if w < 0x80000000
@@ -1075,7 +1108,29 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
         step ctx@EvalCtx{ stack = (VI64 v:rest) } (FReinterpretI BS64) =
             return $ Done ctx { stack = VF64 (wordToDouble v) : rest }
         -- MS-Wasm step instructions
-        step EvalCtx{ stack } NewSegment = error "Evaluating new segment"
+        step EvalCtx{ stack = (VHandle w x y z : rest) } I32SegmentLoad =
+            error $ "i32.segment_load: Get i32 from handle (" ++ show w ++ ", " ++ show x
+              ++ ", " ++ show y ++ ", " ++ show z ++ ")"
+        step EvalCtx{ stack = (VHandle w x y z : rest) } I64SegmentLoad =
+            error $ "i64.segment_load: Get i64 from handle (" ++ show w ++ ", " ++ show x
+              ++ ", " ++ show y ++ ", " ++ show z ++ ")"
+        step EvalCtx{ stack = (VHandle w x y z : VI32 v : rest) } I32SegmentStore =
+            error $ "i32.segment_store: Store i32 " ++ show v ++ " to handle (" ++ show w ++ ", " 
+              ++ show x ++ ", " ++ show y ++ ", " ++ show z ++ ")"
+        step EvalCtx{ stack = (VHandle w x y z : VI64 v : rest) } I64SegmentStore =
+            error $ "i64.segment_store: Store i64 " ++ show v ++ " to handle (" ++ show w ++ ", " 
+              ++ show x ++ ", " ++ show y ++ ", " ++ show z ++ ")"
+        step ctx@EvalCtx{ stack = (VI32 v : rest) } NewSegment = 
+            return $ Done ctx { stack = ((VHandle 0 v 0 False) : rest) }
+        step EvalCtx{ stack = (VHandle w x y z : rest) } FreeSegment =
+            error $ "free_segment: freeing from handle (" ++ show w ++ ", " ++ show x
+              ++ ", " ++ show y ++ ", " ++ show z ++ ")"
+        step EvalCtx{ stack } SegmentSlice =
+            error $ "insert segment_slice impl here"
+        step EvalCtx{ stack } HandleSegmentLoad =
+            error $ "insert handle.segment_load impl here"
+        step EvalCtx{ stack } HandleSegmentStore =
+            error $ "insert handle.segment_store impl here"
         step EvalCtx{ stack } instr = error $ "Error during evaluation of instruction: " ++ show instr ++ ". Stack " ++ show stack
 eval _ _ HostInstance { funcType, hostCode } args = Just <$> hostCode args
 
