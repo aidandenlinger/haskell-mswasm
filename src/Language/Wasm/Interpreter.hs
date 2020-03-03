@@ -72,7 +72,7 @@ data Value =
 
 -- MS-Wasm segment memory handling
 data SegmentMemory = SegmentMemory { segments  :: Map.Map Value Value 
-                                   , size      :: Int }
+                                   , size      :: Int32 }
     deriving (Eq, Show)
 
 loadFromSegment :: SegmentMemory -> Value -> Value
@@ -1119,8 +1119,11 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
         step EvalCtx{ stack = (VHandle w x y z : VI64 v : rest) } I64SegmentStore =
             error $ "i64.segment_store: Store i64 " ++ show v ++ " to handle (" ++ show w ++ ", " 
               ++ show x ++ ", " ++ show y ++ ", " ++ show z ++ ")"
-        step ctx@EvalCtx{ stack = (VI32 v : rest) } NewSegment = 
-            return $ Done ctx { stack = ((VHandle 0 v 0 False) : rest) }
+        step ctx@EvalCtx{ stack = (VI32 v : rest), segmem } NewSegment =
+            let result = VHandle (asWord32 $ size segmem)      (asWord32 0) 
+                                 (asWord32 $ size segmem + asInt32 v) False
+            in return $ Done ctx { stack = result : rest
+                                 , segmem = newSegment segmem result (VI32 (asWord32 0))}
         step EvalCtx{ stack = (VHandle w x y z : rest) } FreeSegment =
             error $ "free_segment: freeing from handle (" ++ show w ++ ", " ++ show x
               ++ ", " ++ show y ++ ", " ++ show z ++ ")"
