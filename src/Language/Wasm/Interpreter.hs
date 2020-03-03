@@ -1110,10 +1110,9 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
         -- TODO: loadFromSegment doesn't specifify what's IN the handle, so same
         -- code for I32SegmentLoad and I64SegmentLoad
         step ctx@EvalCtx { stack = (VHandle w x y z : rest), segmem } I32SegmentLoad =
-          return $ Done ctx { stack = loadFromSegment segmem (VHandle w x y z) : rest }
-        step EvalCtx{ stack = (VHandle w x y z : rest) } I64SegmentLoad =
-            error $ "i64.segment_load: Get i64 from handle (" ++ show w ++ ", " ++ show x
-              ++ ", " ++ show y ++ ", " ++ show z ++ ")"
+            return $ Done ctx { stack = loadFromSegment segmem (VHandle w x y z) : rest }
+        step ctx@EvalCtx { stack = (VHandle w x y z : rest), segmem } I64SegmentLoad =
+            return $ Done ctx { stack = loadFromSegment segmem (VHandle w x y z) : rest }
         step EvalCtx{ stack = (VHandle w x y z : VI32 v : rest) } I32SegmentStore =
             error $ "i32.segment_store: Store i32 " ++ show v ++ " to handle (" ++ show w ++ ", " 
               ++ show x ++ ", " ++ show y ++ ", " ++ show z ++ ")"
@@ -1125,13 +1124,12 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
                                  (asWord32 $ size segmem + asInt32 v) False
             in return $ Done ctx { stack = result : rest
                                  , segmem = newSegment segmem result (VI32 (asWord32 0))}
-        step EvalCtx{ stack = (VHandle w x y z : rest) } FreeSegment =
-            error $ "free_segment: freeing from handle (" ++ show w ++ ", " ++ show x
-              ++ ", " ++ show y ++ ", " ++ show z ++ ")"
+        step ctx@EvalCtx{ stack = (VHandle w x y z : rest), segmem } FreeSegment =
+            return $ Done ctx { stack = rest, segmem = freeSegment segmem (VHandle w x y z)}
         step EvalCtx{ stack } SegmentSlice =
             error $ "insert segment_slice impl here"
-        step EvalCtx{ stack } HandleSegmentLoad =
-            error $ "insert handle.segment_load impl here"
+        step ctx@EvalCtx { stack = (VHandle w x y z : rest), segmem } HandleSegmentLoad =
+            return $ Done ctx { stack = loadFromSegment segmem (VHandle w x y z) : rest }
         step EvalCtx{ stack } HandleSegmentStore =
             error $ "insert handle.segment_store impl here"
         step EvalCtx{ stack } instr = error $ "Error during evaluation of instruction: " ++ show instr ++ ". Stack " ++ show stack

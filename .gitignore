@@ -1,4 +1,5 @@
 .stack-work
+.vscode/
 tests/runnable/*
 dist/
 .DS_Store
