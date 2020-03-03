@@ -1107,9 +1107,10 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
         step ctx@EvalCtx{ stack = (VI64 v:rest) } (FReinterpretI BS64) =
             return $ Done ctx { stack = VF64 (wordToDouble v) : rest }
         -- MS-Wasm step instructions
-        step EvalCtx{ stack = (VHandle w x y z : rest) } I32SegmentLoad =
-            error $ "i32.segment_load: Get i32 from handle (" ++ show w ++ ", " ++ show x
-              ++ ", " ++ show y ++ ", " ++ show z ++ ")"
+        -- TODO: loadFromSegment doesn't specifify what's IN the handle, so same
+        -- code for I32SegmentLoad and I64SegmentLoad
+        step ctx@EvalCtx { stack = (VHandle w x y z : rest), segmem } I32SegmentLoad =
+          return $ Done ctx { stack = loadFromSegment segmem (VHandle w x y z) : rest }
         step EvalCtx{ stack = (VHandle w x y z : rest) } I64SegmentLoad =
             error $ "i64.segment_load: Get i64 from handle (" ++ show w ++ ", " ++ show x
               ++ ", " ++ show y ++ ", " ++ show z ++ ")"
