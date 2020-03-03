@@ -68,7 +68,7 @@ data Value =
     | VF32 Float
     | VF64 Double
     | VHandle Word32 Word32 Word32 Bool
-    deriving (Eq, Show)
+    deriving (Eq, Show, Ord)
 
 -- MS-Wasm segment memory handling
 data SegmentMemory = SegmentMemory { segments  :: Map.Map Value Value 
@@ -85,18 +85,14 @@ loadFromSegment mem key =
 freeSegment :: SegmentMemory -> Value -> SegmentMemory
 freeSegment mem key =
     case key of
-        VHandle x y z b -> SegmentMemory { segments = case Map.delete key (segments mem) of
-                                                          Just map -> map
-                                                          Nothing  -> error "Segment not found"
+        VHandle x y z b -> SegmentMemory { segments = Map.delete key (segments mem)
                                          , size     = size mem }
         _               -> error "type error: freeSegment"
 
 newSegment :: SegmentMemory -> Value -> Value -> SegmentMemory
 newSegment mem key val =
     case key of
-        VHandle x y z b -> SegmentMemory { segments = case Map.insert key val (segments mem) of
-                                                          Just map -> map
-                                                          Nothing  -> error "Segment not found" 
+        VHandle x y z b -> SegmentMemory { segments = (Map.insert key val (segments mem)) 
                                          , size     = size mem }
         _               -> error "type error: newSegment"
 
