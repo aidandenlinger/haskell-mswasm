@@ -73,6 +73,7 @@ data Value =
 -- MS-Wasm segment memory handling
 data SegmentMemory = SegmentMemory { segments  :: Map.Map Value Value 
                                    , size      :: Int }
+    deriving (Eq, Show)
 
 loadFromSegment :: SegmentMemory -> Value -> Value
 loadFromSegment mem key =
@@ -568,7 +569,8 @@ type Stack = [Value]
 data EvalCtx = EvalCtx {
     locals :: Vector Value,
     labels :: [Label],
-    stack :: Stack
+    stack :: Stack,
+    segmem :: SegmentMemory
 } deriving (Show, Eq)
 
 data EvalResult =
@@ -586,7 +588,8 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
             let initialContext = EvalCtx {
                     locals = Vector.fromList $ checkedArgs ++ map initLocal localTypes,
                     labels = [Label $ results funcType],
-                    stack = []
+                    stack = [],
+                    segmem = SegmentMemory {segments = Map.empty, size = 0}
                 }
             res <- go initialContext body
             case res of
