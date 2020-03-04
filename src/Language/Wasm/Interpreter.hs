@@ -87,20 +87,21 @@ freeSegment :: SegmentMemory -> Value -> SegmentMemory
 freeSegment mem key =
     case key of
         VHandle x y z b -> SegmentMemory { segments = Map.delete key (segments mem)
-                                         , size     = size mem }
+                                         , size     = (size mem) - asInt32 (z - x) }
         _               -> error "type error: freeSegment"
 
 newSegment :: SegmentMemory -> Value -> Value -> SegmentMemory
 newSegment mem key val =
     case key of
         VHandle x y z b -> SegmentMemory { segments = (Map.insert key val (segments mem)) 
-                                         , size     = size mem }
+                                         , size     = (size mem) + asInt32 (z - x) }
         _               -> error "type error: newSegment"
 
 storeToSegment :: SegmentMemory -> Value -> Value -> SegmentMemory
 storeToSegment mem key val =
     case key of
-        VHandle x y z b -> Map.adjust key val (segments mem)
+        VHandle x y z b -> SegmentMemory { segments = (Map.insert key val (segments mem)) 
+                                         , size     = size mem }
         _               -> error "type error: storeToSegment"
 
 -- end MS-Wasm interpreter functions
@@ -607,10 +608,11 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
         Nothing -> return Nothing
     where
         checkValType :: ValueType -> Value -> Maybe Value
-        checkValType I32 (VI32 v) = Just $ VI32 v
-        checkValType I64 (VI64 v) = Just $ VI64 v
-        checkValType F32 (VF32 v) = Just $ VF32 v
-        checkValType F64 (VF64 v) = Just $ VF64 v
+        checkValType I32    (VI32 v)          = Just $ VI32 v
+        checkValType I64    (VI64 v)          = Just $ VI64 v
+        checkValType F32    (VF32 v)          = Just $ VF32 v
+        checkValType F64    (VF64 v)          = Just $ VF64 v
+        checkValType Handle (VHandle x y z b) = Just $ VHandle x y z b
         checkValType _   _        = Nothing
 
         initLocal :: ValueType -> Value
@@ -1119,9 +1121,9 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
             return $ Done ctx { stack = loadFromSegment segmem (VHandle w x y z) : rest }
         step ctx@EvalCtx { stack = (VHandle w x y z : rest), segmem } I64SegmentLoad =
             return $ Done ctx { stack = loadFromSegment segmem (VHandle w x y z) : rest }
-        step ctx@EvalCtx{ stack = (VHandle w x y z : VI32 v : rest), segmem } I32SegmentStore =
+        step ctx@EvalCtx{ stack = (VI32 v : VHandle w x y z : rest), segmem } I32SegmentStore =
             return $ Done ctx { stack = rest, segmem = storeToSegment segmem (VHandle w x y z) (VI32 v) }
-        step EvalCtx{ stack = (VHandle w x y z : VI64 v : rest) } I64SegmentStore =
+        step EvalCtx{ stack = (VI64 v : VHandle w x y z : rest) } I64SegmentStore =
             error $ "i64.segment_store: Store i64 " ++ show v ++ " to handle (" ++ show w ++ ", " 
               ++ show x ++ ", " ++ show y ++ ", " ++ show z ++ ")"
         step ctx@EvalCtx{ stack = (VI32 v : rest), segmem } NewSegment =
@@ -1137,6 +1139,7 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
             return $ Done ctx { stack = loadFromSegment segmem (VHandle w x y z) : rest }
         step EvalCtx{ stack } HandleSegmentStore =
             error $ "insert handle.segment_store impl here"
+        -- End MS-Wasm instructions
         step EvalCtx{ stack } instr = error $ "Error during evaluation of instruction: " ++ show instr ++ ". Stack " ++ show stack
 eval _ _ HostInstance { funcType, hostCode } args = Just <$> hostCode args
 
