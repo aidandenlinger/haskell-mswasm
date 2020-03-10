@@ -71,16 +71,24 @@ data Value =
     deriving (Eq, Show, Ord)
 
 -- MS-Wasm segment memory handling
-data SegmentMemory = SegmentMemory { segments  :: Map.Map Value Value 
+data SegmentType   = SegData | SegHandle
+    deriving (Eq, Show)
+
+data SegmentMemory = SegmentMemory { segments  :: Map.Map Value (SegmentType, Value) 
                                    , size      :: Int32 }
     deriving (Eq, Show)
 
 loadFromSegment :: SegmentMemory -> Value -> Value
 loadFromSegment mem key =
     case key of
-        VHandle x y z b -> case Map.lookup key (segments mem) of
-                             Just val -> val
-                             Nothing  -> error "Segment not found"
+        VHandle x y z b ->
+            case Map.lookup key (segments mem) of
+                Just (segType, val) -> case segType of
+                    SegData         -> case val of
+                        VHandle x y z b -> VHandle x y z True
+                        _               -> val
+                    _               -> val
+                Nothing             -> error "Segment not found"
         _               -> error "type error: loadFromSegment"
 
 freeSegment :: SegmentMemory -> Value -> SegmentMemory
@@ -93,15 +101,21 @@ freeSegment mem key =
 newSegment :: SegmentMemory -> Value -> Value -> SegmentMemory
 newSegment mem key val =
     case key of
-        VHandle x y z b -> SegmentMemory { segments = (Map.insert key val (segments mem)) 
-                                         , size     = (size mem) + asInt32 (z - x) }
+        VHandle x y z b -> 
+            SegmentMemory { segments = (Map.insert key (SegData, val) (segments mem)) 
+                          , size     = (size mem) + asInt32 (z - x) }
         _               -> error "type error: newSegment"
 
 storeToSegment :: SegmentMemory -> Value -> Value -> SegmentMemory
 storeToSegment mem key val =
     case key of
-        VHandle x y z b -> SegmentMemory { segments = (Map.insert key val (segments mem)) 
-                                         , size     = size mem }
+        VHandle x y z b -> case val of
+            VHandle t u v w ->
+                SegmentMemory { segments = (Map.insert key (SegHandle, val) (segments mem)) 
+                              , size     = size mem }
+            _               ->
+                SegmentMemory { segments = (Map.insert key (SegData, val) (segments mem)) 
+                              , size     = size mem }
         _               -> error "type error: storeToSegment"
 
 -- end MS-Wasm interpreter functions
