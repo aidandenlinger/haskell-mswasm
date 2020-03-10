@@ -118,6 +118,15 @@ storeToSegment mem key val =
                               , size     = size mem }
         _               -> error "type error: storeToSegment"
 
+typeCheckSegment :: Value -> Value
+typeCheckSegment val =
+    case val of
+        VI64 val -> VI64 val
+        VF32 val -> VF32 val
+        VF64 val -> VF64 val
+        VHandle x y z b -> VHandle x y z b
+        _ -> error "type mismatch"
+
 -- end MS-Wasm interpreter functions
 
 
