@@ -199,6 +199,8 @@ data Instruction index =
     | SegmentSlice
     | HandleSegmentLoad
     | HandleSegmentStore
+    | HandleAdd
+    | HandleSub
     deriving (Show, Eq, Generic, NFData)
 
 type Expression = [Instruction Natural]

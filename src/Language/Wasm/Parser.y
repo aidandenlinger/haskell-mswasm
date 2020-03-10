@@ -315,6 +315,8 @@ import Language.Wasm.Lexer (
 'segment_slice'       { Lexeme _ (TKeyword "segment_slice") }
 'handle.segment_load' { Lexeme _ (TKeyword "handle.segment_load") }
 'handle.segment_store'{ Lexeme _ (TKeyword "handle.segment_store") }
+'handle.add'          { Lexeme _ (TKeyword "handle.add")}
+'handle.sub'          { Lexeme _ (TKeyword "handle.sub")}
 -- end ms-wasm extension
 -- script extension
 'binary'              { Lexeme _ (TKeyword "binary") }
@@ -590,6 +592,8 @@ plaininstr :: { PlainInstr }
     | 'segment_slice'                { SegmentSlice }
     | 'handle.segment_load'          { HandleSegmentLoad }
     | 'handle.segment_store'         { HandleSegmentStore }
+    | 'handle.add'                   { HandleAdd }
+    | 'handle.sub'                   { HandleSub }
 
 typeuse :: { TypeUse }
     : '(' typeuse1 { $2 }
@@ -1326,6 +1330,8 @@ data PlainInstr =
     | SegmentSlice
     | HandleSegmentLoad
     | HandleSegmentStore
+    | HandleAdd
+    | HandleSub
     deriving (Show, Eq, Generic, NFData)
 
 data TypeDef = TypeDef (Maybe Ident) FuncType deriving (Show, Eq, Generic, NFData)
@@ -1767,6 +1773,8 @@ desugarize fields = do
         synInstrToStruct _ (PlainInstr SegmentSlice) = return $ S.SegmentSlice
         synInstrToStruct _ (PlainInstr HandleSegmentLoad) = return $ S.HandleSegmentLoad
         synInstrToStruct _ (PlainInstr HandleSegmentLoad) = return $ S.HandleSegmentLoad
+        synInstrToStruct _ (PlainInstr HandleAdd) = return $ S.HandleAdd
+        synInstrToStruct _ (PlainInstr HandleSub) = return $ S.HandleSub
         -- End MS-Wasm
         synInstrToStruct ctx BlockInstr {label, resultType, body} =
             let ctx' = ctx { ctxLabels = label : ctxLabels ctx } in
