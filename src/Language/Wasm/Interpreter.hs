@@ -1170,6 +1170,10 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
             return $ Done ctx { stack = loadFromSegment segmem (VHandle w x y z) : rest }
         step EvalCtx{ stack } HandleSegmentStore =
             error $ "insert handle.segment_store impl here"
+        step ctx@EvalCtx{ stack = (VHandle w x y z : VI32 i : rest)} HandleAdd =
+            return $ Done ctx { stack = VHandle w (x+i) y z : rest }
+        step ctx@EvalCtx{ stack = (VHandle w x y z : VI32 i : rest)} HandleSub =
+            return $ Done ctx { stack = VHandle w (x-i) y z : rest }
         -- End MS-Wasm instructions
         step EvalCtx{ stack } instr = error $ "Error during evaluation of instruction: " ++ show instr ++ ". Stack " ++ show stack
 eval _ _ HostInstance { funcType, hostCode } args = Just <$> hostCode args
