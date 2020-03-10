@@ -91,6 +91,18 @@ loadFromSegment mem key =
                 Nothing             -> error "Segment not found"
         _               -> error "type error: loadFromSegment"
 
+storeToSegment :: SegmentMemory -> Value -> Value -> SegmentMemory
+storeToSegment mem key val =
+    case key of
+        VHandle x y z b -> case val of
+            VHandle t u v w ->
+                SegmentMemory { segments = (Map.insert key (SegHandle, val) (segments mem)) 
+                              , size     = size mem }
+            _               ->
+                SegmentMemory { segments = (Map.insert key (SegData, val) (segments mem)) 
+                              , size     = size mem }
+        _               -> error "type error: storeToSegment"
+
 freeSegment :: SegmentMemory -> Value -> SegmentMemory
 freeSegment mem key =
     case key of
@@ -106,26 +118,19 @@ newSegment mem key val =
                           , size     = (size mem) + asInt32 (z - x) }
         _               -> error "type error: newSegment"
 
-storeToSegment :: SegmentMemory -> Value -> Value -> SegmentMemory
-storeToSegment mem key val =
-    case key of
-        VHandle x y z b -> case val of
-            VHandle t u v w ->
-                SegmentMemory { segments = (Map.insert key (SegHandle, val) (segments mem)) 
-                              , size     = size mem }
-            _               ->
-                SegmentMemory { segments = (Map.insert key (SegData, val) (segments mem)) 
-                              , size     = size mem }
-        _               -> error "type error: storeToSegment"
+sliceSegment :: Value -> Int32 -> Int32 -> Value
+sliceSegment (VHandle x y z b) base bound = 
+    (VHandle (asWord32 $ max (asInt32 x) base) y (asWord32 $ min (asInt32 z) bound) b)
+sliceSegment _                 _    _     = error "type error: sliceSegment"
 
 typeCheckSegment :: Value -> Value
 typeCheckSegment val =
     case val of
-        VI64 val -> VI64 val
-        VF32 val -> VF32 val
-        VF64 val -> VF64 val
+        VI64 val        -> VI64 val
+        VF32 val        -> VF32 val
+        VF64 val        -> VF64 val
         VHandle x y z b -> VHandle x y z b
-        _ -> error "type mismatch"
+        _               -> error "type mismatch"
 
 -- end MS-Wasm interpreter functions
 
@@ -1156,8 +1161,11 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
                                  , segmem = newSegment segmem result (VI32 (asWord32 0))}
         step ctx@EvalCtx{ stack = (VHandle w x y z : rest), segmem } FreeSegment =
             return $ Done ctx { stack = rest, segmem = freeSegment segmem (VHandle w x y z)}
-        step EvalCtx{ stack } SegmentSlice =
-            error $ "insert segment_slice impl here"
+        step ctx@EvalCtx{ stack = VHandle w x y z : VI32 base : VI32 bound : rest
+                        , segmem } SegmentSlice =
+            let result = sliceSegment (VHandle w x y z) (asInt32 base) (asInt32 bound)
+            in return $ Done ctx { stack = result : rest
+                                 , segmem = newSegment segmem result (VI32 (asWord32 0)) }
         step ctx@EvalCtx { stack = (VHandle w x y z : rest), segmem } HandleSegmentLoad =
             return $ Done ctx { stack = loadFromSegment segmem (VHandle w x y z) : rest }
         step EvalCtx{ stack } HandleSegmentStore =
