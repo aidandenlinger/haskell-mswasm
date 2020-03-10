@@ -70,6 +70,14 @@ data Value =
     | VHandle Word32 Word32 Word32 Bool
     deriving (Eq, Show, Ord)
 
+data Type =
+    TI32
+    | TI64
+    | TF32
+    | TF64
+    | THandle
+    deriving (Eq, Show, Ord)
+
 -- MS-Wasm segment memory handling
 data SegmentType   = SegData | SegHandle
     deriving (Eq, Show)
@@ -123,14 +131,14 @@ sliceSegment (VHandle x y z b) base bound =
     (VHandle (asWord32 $ max (asInt32 x) base) y (asWord32 $ min (asInt32 z) bound) b)
 sliceSegment _                 _    _     = error "type error: sliceSegment"
 
-typeCheckSegment :: Value -> Value
+typeCheckSegment :: Value -> Type
 typeCheckSegment val =
     case val of
-        VI64 val        -> VI64 val
-        VF32 val        -> VF32 val
-        VF64 val        -> VF64 val
-        VHandle x y z b -> VHandle x y z b
-        _               -> error "type mismatch"
+        VI32 val -> TI32
+        VI64 val -> TI64
+        VF32 val -> TF32
+        VF64 val -> TF64
+        VHandle x y z b -> THandle
 
 -- end MS-Wasm interpreter functions
 
@@ -1143,9 +1151,10 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
         step ctx@EvalCtx{ stack = (VI64 v:rest) } (FReinterpretI BS64) =
             return $ Done ctx { stack = VF64 (wordToDouble v) : rest }
         -- MS-Wasm step instructions
-        -- TODO: loadFromSegment doesn't specifify what's IN the handle, so same
+        -- TODO: loadFromSegment doesn't specify what's IN the handle, so same
         -- code for I32SegmentLoad and I64SegmentLoad
         step ctx@EvalCtx { stack = (VHandle w x y z : rest), segmem } I32SegmentLoad =
+            -- typeCheckSegment VHandle w x y z
             return $ Done ctx { stack = loadFromSegment segmem (VHandle w x y z) : rest }
         step ctx@EvalCtx { stack = (VHandle w x y z : rest), segmem } I64SegmentLoad =
             return $ Done ctx { stack = loadFromSegment segmem (VHandle w x y z) : rest }
