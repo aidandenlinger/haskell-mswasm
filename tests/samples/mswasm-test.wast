@@ -28,14 +28,14 @@
     (set_local $h1 (new_segment (i32.const 8)))
     (i32.segment_store (get_local $h1) (get_local $i1))
 
-    (handle.add (i32.const 1) (get_local $h1))
+    (set_local $h1 (handle.add (i32.const 1) (get_local $h1)))
 
     (i32.segment_store (get_local $h1) (get_local $i2))
 
-    (handle.sub (i32.const 1) (get_local $h1))
+    (set_local $h1 (handle.sub (i32.const 1) (get_local $h1)))
     (i32.segment_load (get_local $h1))
     
-    (handle.add (i32.const 1) (get_local $h1))
+    (set_local $h1 (handle.add (i32.const 1) (get_local $h1)))
     (i32.segment_load (get_local $h1))
 
     i32.sub

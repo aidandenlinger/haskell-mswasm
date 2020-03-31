@@ -344,6 +344,8 @@ getInstrType FreeSegment = return $ Handle ==> empty
 getInstrType SegmentSlice = return $ [Handle, I32, I32] ==> Handle
 getInstrType HandleSegmentLoad = return $ Handle ==> Handle
 getInstrType HandleSegmentStore = return $ [Handle, Handle] ==> empty
+getInstrType HandleAdd = return $ [I32, Handle] ==> Handle
+getInstrType HandleSub = return $ [I32, Handle] ==> Handle
 -- End MSWasm instr
 getInstrType (I32Const _) = return $ empty ==> I32
 getInstrType (I64Const _) = return $ empty ==> I64
