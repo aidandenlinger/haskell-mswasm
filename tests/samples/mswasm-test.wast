@@ -60,7 +60,7 @@
     (handle.add (i32.const 1) (get_local $h1))
 
     ;; load i2 to the handle with offset 1
-    (i32.segment_store (get_local $h1) (get_local $i2)
+    (i32.segment_store (get_local $h1) (get_local $i2))
 
     ;; subtract 1 to bring handle back to base, offset = 0
     (handle.sub (i32.const 1) (get_local $h1))
@@ -76,7 +76,21 @@
     i32.sub
   )
 
-  (func (export "ms_handleaddtrap") (result i32))
+  (func (export "ms_handleAddTrap") (result i32)
+    (local $h1 handle)
+
+    ;; handle of size 1
+    (set_local $h1 (new_segment (i32.const 1)))
+
+    ;; add past the bound
+    (handle.add (i32.const 5) (get_local $h1))
+
+    ;; should throw trap here, since derefencing past bound
+    (i32.segment_store (get_local $h1) (i32.const 32))
+
+    ;; if no trap and returns 0, the trap is wrong
+    (i32.add (i32.const 0) (i32.const 0))
+  )
 )
 
 
@@ -88,3 +102,5 @@
 (assert_return (invoke "ms_add" (i32.const 0) (i32.const 0x12345678)) (i32.const 0x12345678))
 
 (assert_return (invoke "ms_handleaddsub" (i32.const 10) (i32.const 1)) (i32.const 9))
+
+(assert_trap (invoke "ms_handleAddTrap") "out of bounds memory access")
