@@ -21,6 +21,62 @@
     (i32.segment_load (get_local $h2))
     i32.add
   )
+
+  (func (export "ms_handleaddsub") (param $i1 i32) (param $i2 i32) (result i32)
+    (local $h1 handle) (local $h2 handle)
+
+    ;; create handle and save value of i1
+    (set_local $h1 (new_segment (i32.const 8)))
+    (i32.segment_store (get_local $h1) (get_local $i1))
+
+    ;; add 1 to handle
+    (handle.add (i32.const 1) (get_local $h1))
+
+    ;; load i2 to the handle with offset 1
+    (i32.segment_store (get_local $h1) (get_local $i2)
+
+    ;; subtract 1 to bring handle back to base, offset = 0
+    (handle.sub (i32.const 1) (get_local $h1))
+    ;; pop i1
+    (i32.segment_load (get_local $h1))
+    
+    ;; add 1 again to move handle to offset=1
+    (handle.add (i32.const 1) (get_local $h1))
+    ;; pop i2
+    (i32.segment_load (get_local $h1))
+
+    ;; result should be i1 - i2
+    i32.sub
+  )
+
+ (func (export "ms_handleaddsub") (param $i1 i32) (param $i2 i32) (result i32)
+    (local $h1 handle)
+
+    ;; create handle and save value of i1
+    (set_local $h1 (new_segment (i32.const 8)))
+    (i32.segment_store (get_local $h1) (get_local $i1))
+
+    ;; add 1 to handle
+    (handle.add (i32.const 1) (get_local $h1))
+
+    ;; load i2 to the handle with offset 1
+    (i32.segment_store (get_local $h1) (get_local $i2)
+
+    ;; subtract 1 to bring handle back to base, offset = 0
+    (handle.sub (i32.const 1) (get_local $h1))
+    ;; pop i1
+    (i32.segment_load (get_local $h1))
+    
+    ;; add 1 again to move handle to offset=1
+    (handle.add (i32.const 1) (get_local $h1))
+    ;; pop i2
+    (i32.segment_load (get_local $h1))
+
+    ;; result should be i1 - i2
+    i32.sub
+  )
+
+  (func (export "ms_handleaddtrap") (result i32))
 )
 
 
@@ -30,3 +86,5 @@
 (assert_return (invoke "ms_add" (i32.const 10) (i32.const 1)) (i32.const 11))
 (assert_return (invoke "ms_add" (i32.const 45) (i32.const -45)) (i32.const 0))
 (assert_return (invoke "ms_add" (i32.const 0) (i32.const 0x12345678)) (i32.const 0x12345678))
+
+(assert_return (invoke "ms_handleaddsub" (i32.const 10) (i32.const 1)) (i32.const 9))
