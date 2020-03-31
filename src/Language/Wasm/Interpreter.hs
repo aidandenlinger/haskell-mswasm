@@ -122,7 +122,8 @@ newSegment :: SegmentMemory -> Value -> Value -> SegmentMemory
 newSegment mem key val =
     case key of
         VHandle x y z b -> 
-            SegmentMemory { segments = (Map.insert key (SegData, val) (segments mem)) 
+            SegmentMemory { segments = (Map.insertWith (\old new -> old) key 
+                                                       (SegData, val) (segments mem)) 
                           , size     = (size mem) + asInt32 (z - x) }
         _               -> error "type error: newSegment"
 
@@ -1160,9 +1161,8 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
             return $ Done ctx { stack = loadFromSegment segmem (VHandle w x y z) : rest }
         step ctx@EvalCtx{ stack = (VI32 v : VHandle w x y z : rest), segmem } I32SegmentStore =
             return $ Done ctx { stack = rest, segmem = storeToSegment segmem (VHandle w x y z) (VI32 v) }
-        step EvalCtx{ stack = (VI64 v : VHandle w x y z : rest) } I64SegmentStore =
-            error $ "i64.segment_store: Store i64 " ++ show v ++ " to handle (" ++ show w ++ ", " 
-              ++ show x ++ ", " ++ show y ++ ", " ++ show z ++ ")"
+        step ctx@EvalCtx{ stack = (VI64 v : VHandle w x y z : rest), segmem } I64SegmentStore =
+            return $ Done ctx { stack = rest, segmem = storeToSegment segmem (VHandle w x y z) (VI64 v) }
         step ctx@EvalCtx{ stack = (VI32 v : rest), segmem } NewSegment =
             let result = VHandle (asWord32 $ size segmem)      (asWord32 0) 
                                  (asWord32 $ size segmem + asInt32 v) False
@@ -1177,12 +1177,17 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
                                  , segmem = newSegment segmem result (VI32 (asWord32 0)) }
         step ctx@EvalCtx { stack = (VHandle w x y z : rest), segmem } HandleSegmentLoad =
             return $ Done ctx { stack = loadFromSegment segmem (VHandle w x y z) : rest }
-        step EvalCtx{ stack } HandleSegmentStore =
-            error $ "insert handle.segment_store impl here"
-        step ctx@EvalCtx{ stack = (VHandle w x y z : VI32 i : rest)} HandleAdd =
-            return $ Done ctx { stack = VHandle w (x+i) y z : rest }
-        step ctx@EvalCtx{ stack = (VHandle w x y z : VI32 i : rest)} HandleSub =
-            return $ Done ctx { stack = VHandle w (x-i) y z : rest }
+        step ctx@EvalCtx{ stack = (VHandle a b c d : VHandle w x y z : rest), 
+                          segmem } HandleSegmentStore =
+            return $ Done ctx { stack = rest, segmem = storeToSegment segmem (VHandle w x y z) (VHandle a b c d) }
+        step ctx@EvalCtx{ stack = (VHandle w x y z : VI32 i : rest), segmem } HandleAdd =
+            let result = VHandle w (x+i) y z
+            in return $ Done ctx { stack = result : rest
+                                 , segmem = newSegment segmem result (VI32 (asWord32 0))}
+        step ctx@EvalCtx{ stack = (VHandle w x y z : VI32 i : rest), segmem } HandleSub =
+            let result = VHandle w (x-i) y z
+            in return $ Done ctx { stack = result : rest
+                                 , segmem = newSegment segmem result (VI32 (asWord32 0))}
         -- End MS-Wasm instructions
         step EvalCtx{ stack } instr = error $ "Error during evaluation of instruction: " ++ show instr ++ ". Stack " ++ show stack
 eval _ _ HostInstance { funcType, hostCode } args = Just <$> hostCode args
