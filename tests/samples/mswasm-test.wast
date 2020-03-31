@@ -50,5 +50,5 @@
 (assert_return (invoke "ms_add" (i32.const 45) (i32.const -45)) (i32.const 0))
 (assert_return (invoke "ms_add" (i32.const 0) (i32.const 0x12345678)) (i32.const 0x12345678))
 
-;; (assert_return (invoke "ms_handleaddsub" (i32.const 10) (i32.const 1)) (i32.const 9))
+(assert_return (invoke "ms_handleaddsub" (i32.const 10) (i32.const 1)) (i32.const 9))
 
