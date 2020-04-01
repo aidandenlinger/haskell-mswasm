@@ -122,7 +122,7 @@ newSegment :: SegmentMemory -> Value -> Value -> SegmentMemory
 newSegment mem key val =
     case key of
         VHandle x y z b -> 
-            SegmentMemory { segments = (Map.insertWith (\old new -> old) key 
+            SegmentMemory { segments = (Map.insertWith (\new old -> old) key 
                                                        (SegData, val) (segments mem)) 
                           , size     = (size mem) + asInt32 (z - x) }
         _               -> error "type error: newSegment"
