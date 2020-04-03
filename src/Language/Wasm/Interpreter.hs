@@ -139,11 +139,11 @@ handleOutOfBounds _                 = False
 typeCheckSegment :: Value -> Type
 typeCheckSegment val =
     case val of
-        VI32 val -> TI32
-        VI64 val -> TI64
-        VF32 val -> TF32
-        VF64 val -> TF64
-        VHandle x y z b -> THandle
+        (VI32 val) -> TI32
+        (VI64 val) -> TI64
+        (VF32 val) -> TF32
+        (VF64 val) -> TF64
+        (VHandle x y z b) -> THandle
 
 -- end MS-Wasm interpreter functions
 
@@ -1159,7 +1159,6 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
         -- TODO: loadFromSegment doesn't specify what's IN the handle, so same
         -- code for I32SegmentLoad and I64SegmentLoad
         step ctx@EvalCtx { stack = (VHandle w x y z : rest), segmem } I32SegmentLoad =
-            -- typeCheckSegment VHandle w x y z
           if handleOutOfBounds (VHandle w x y z)
             then return Trap
             else return $ Done ctx { stack = loadFromSegment segmem (VHandle w x y z) : rest }
