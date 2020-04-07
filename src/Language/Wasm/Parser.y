@@ -1772,7 +1772,7 @@ desugarize fields = do
         synInstrToStruct _ (PlainInstr FreeSegment) = return $ S.FreeSegment
         synInstrToStruct _ (PlainInstr SegmentSlice) = return $ S.SegmentSlice
         synInstrToStruct _ (PlainInstr HandleSegmentLoad) = return $ S.HandleSegmentLoad
-        synInstrToStruct _ (PlainInstr HandleSegmentLoad) = return $ S.HandleSegmentLoad
+        synInstrToStruct _ (PlainInstr HandleSegmentStore) = return $ S.HandleSegmentStore
         synInstrToStruct _ (PlainInstr HandleAdd) = return $ S.HandleAdd
         synInstrToStruct _ (PlainInstr HandleSub) = return $ S.HandleSub
         -- End MS-Wasm

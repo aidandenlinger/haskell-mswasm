@@ -132,9 +132,9 @@ sliceSegment (VHandle x y z b) base bound =
     (VHandle (asWord32 $ max (asInt32 x) base) y (asWord32 $ min (asInt32 z) bound) b)
 sliceSegment _                 _    _     = error "type error: sliceSegment"
 
-handleOutOfBounds :: Value -> Bool
-handleOutOfBounds (VHandle x y z b) = x + y > z
-handleOutOfBounds _                 = False
+isValidHandle :: Value -> Bool
+isValidHandle (VHandle x y z b) = (x + y > z) && (not b)
+isValidHandle _                 = False
 
 typeCheckSegment :: Value -> Type
 typeCheckSegment val =
@@ -1159,20 +1159,20 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
         -- TODO: loadFromSegment doesn't specify what's IN the handle, so same
         -- code for I32SegmentLoad and I64SegmentLoad
         step ctx@EvalCtx { stack = (VHandle w x y z : rest), segmem } I32SegmentLoad =
-          if handleOutOfBounds (VHandle w x y z)
+          if isValidHandle (VHandle w x y z)
             then return Trap
             else return $ Done ctx { stack = loadFromSegment segmem (VHandle w x y z) : rest }
         step ctx@EvalCtx { stack = (VHandle w x y z : rest), segmem } I64SegmentLoad =
-          if handleOutOfBounds (VHandle w x y z)
+          if isValidHandle (VHandle w x y z)
             then return Trap
             else return $ Done ctx { stack = loadFromSegment segmem (VHandle w x y z) : rest }
         step ctx@EvalCtx{ stack = (VI32 v : VHandle w x y z : rest), segmem } I32SegmentStore =
-          if handleOutOfBounds (VHandle w x y z)
+          if isValidHandle (VHandle w x y z)
             then return Trap
             else return $ Done ctx { stack = rest, 
                                      segmem = storeToSegment segmem (VHandle w x y z) (VI32 v) }
         step ctx@EvalCtx{ stack = (VI64 v : VHandle w x y z : rest), segmem } I64SegmentStore =
-          if handleOutOfBounds (VHandle w x y z)
+          if isValidHandle (VHandle w x y z)
             then return Trap
             else return $ Done ctx { stack = rest, 
                                      segmem = storeToSegment segmem (VHandle w x y z) (VI64 v) }
@@ -1189,12 +1189,12 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
             in return $ Done ctx { stack = result : rest
                                  , segmem = newSegment segmem result (VI32 (asWord32 0)) }
         step ctx@EvalCtx { stack = (VHandle w x y z : rest), segmem } HandleSegmentLoad =
-          if handleOutOfBounds (VHandle w x y z)
+          if isValidHandle (VHandle w x y z)
             then return Trap
             else return $ Done ctx { stack = loadFromSegment segmem (VHandle w x y z) : rest }
         step ctx@EvalCtx{ stack = (VHandle a b c d : VHandle w x y z : rest), 
                           segmem } HandleSegmentStore =
-          if handleOutOfBounds (VHandle w x y z)
+          if isValidHandle (VHandle w x y z)
             then return Trap
             else return $ Done ctx { stack = rest, segmem = storeToSegment segmem (VHandle w x y z) (VHandle a b c d) }
         step ctx@EvalCtx{ stack = (VHandle w x y z : VI32 i : rest), segmem } HandleAdd =
