@@ -86,64 +86,55 @@ data SegmentMemory = SegmentMemory { segments  :: Map.Map Value (SegmentType, Va
                                    , size      :: Int32 }
     deriving (Eq, Show)
 
-loadFromSegment :: SegmentMemory -> Value -> Value
+loadFromSegment :: SegmentMemory -> Value -> Maybe Value
 loadFromSegment mem key =
     case key of
         VHandle x y z b ->
             case Map.lookup key (segments mem) of
                 Just (segType, val) -> case segType of
                     SegData         -> case val of
-                        VHandle x y z b -> VHandle x y z True
-                        _               -> val
-                    _               -> val
-                Nothing             -> error "Segment not found"
-        _               -> error "type error: loadFromSegment"
+                        VHandle x y z b -> Just $ VHandle x y z True
+                        _               -> Just val
+                    _               -> Just val
+                Nothing             -> Nothing
+        _               -> Nothing
 
-storeToSegment :: SegmentMemory -> Value -> Value -> SegmentMemory
+storeToSegment :: SegmentMemory -> Value -> Value -> Maybe SegmentMemory
 storeToSegment mem key val =
     case key of
         VHandle x y z b -> case val of
             VHandle t u v w ->
-                SegmentMemory { segments = (Map.insert key (SegHandle, val) (segments mem)) 
-                              , size     = size mem }
+                Just SegmentMemory { segments = (Map.insert key (SegHandle, val) (segments mem)) 
+                                     , size     = size mem }
             _               ->
-                SegmentMemory { segments = (Map.insert key (SegData, val) (segments mem)) 
-                              , size     = size mem }
-        _               -> error "type error: storeToSegment"
+                Just SegmentMemory { segments = (Map.insert key (SegData, val) (segments mem)) 
+                                     , size     = size mem }
+        _               -> Nothing
 
-freeSegment :: SegmentMemory -> Value -> SegmentMemory
+freeSegment :: SegmentMemory -> Value -> Maybe SegmentMemory
 freeSegment mem key =
     case key of
-        VHandle x y z b -> SegmentMemory { segments = Map.delete key (segments mem)
-                                         , size     = (size mem) - asInt32 (z - x) }
-        _               -> error "type error: freeSegment"
+        VHandle x y z b -> Just SegmentMemory { segments = Map.delete key (segments mem)
+                                                , size     = (size mem) - asInt32 (z - x) }
+        _               -> Nothing
 
-newSegment :: SegmentMemory -> Value -> Value -> SegmentMemory
+newSegment :: SegmentMemory -> Value -> Value -> Maybe SegmentMemory
 newSegment mem key val =
     case key of
         VHandle x y z b -> 
-            SegmentMemory { segments = (Map.insertWith (\new old -> old) key 
-                                                       (SegData, val) (segments mem)) 
-                          , size     = (size mem) + asInt32 (z - x) }
-        _               -> error "type error: newSegment"
+            Just SegmentMemory { segments = (Map.insertWith (\new old -> old) key 
+                                                            (SegData, val) (segments mem)) 
+                                 , size     = (size mem) + asInt32 (z - x) }
+        _               -> Nothing
 
-sliceSegment :: Value -> Int32 -> Int32 -> Value
+sliceSegment :: Value -> Int32 -> Int32 -> Maybe Value
 sliceSegment (VHandle x y z b) base bound = 
-    (VHandle (asWord32 $ max (asInt32 x) base) y (asWord32 $ min (asInt32 z) bound) b)
-sliceSegment _                 _    _     = error "type error: sliceSegment"
+    Just $ (VHandle (asWord32 $ max (asInt32 x) base) y (asWord32 $ min (asInt32 z) bound) b)
+sliceSegment _                 _    _     = Nothing
 
-isValidHandle :: Value -> Bool
-isValidHandle (VHandle x y z b) = (x + y > z) && (not b)
-isValidHandle _                 = False
-
-typeCheckSegment :: Value -> Type
-typeCheckSegment val =
-    case val of
-        (VI32 val) -> TI32
-        (VI64 val) -> TI64
-        (VF32 val) -> TF32
-        (VF64 val) -> TF64
-        (VHandle x y z b) -> THandle
+isInvalidHandle :: Value -> Bool
+isInvalidHandle (VHandle x y z b) = (x + y > z) && (not b)
+isInvalidHandle _                 = False
 
 -- end MS-Wasm interpreter functions
 
@@ -1159,52 +1150,81 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
         -- TODO: loadFromSegment doesn't specify what's IN the handle, so same
         -- code for I32SegmentLoad and I64SegmentLoad
         step ctx@EvalCtx { stack = (VHandle w x y z : rest), segmem } I32SegmentLoad =
-          if isValidHandle (VHandle w x y z)
+          if isInvalidHandle (VHandle w x y z)
             then return Trap
-            else return $ Done ctx { stack = loadFromSegment segmem (VHandle w x y z) : rest }
+            else let result = loadFromSegment segmem (VHandle w x y z)
+                 in case result of 
+                    Just val -> return $ Done ctx { stack = val : rest }
+                    Nothing  -> return Trap
         step ctx@EvalCtx { stack = (VHandle w x y z : rest), segmem } I64SegmentLoad =
-          if isValidHandle (VHandle w x y z)
+          if isInvalidHandle (VHandle w x y z)
             then return Trap
-            else return $ Done ctx { stack = loadFromSegment segmem (VHandle w x y z) : rest }
+            else let result = loadFromSegment segmem (VHandle w x y z)
+                 in case result of
+                    Just val -> return $ Done ctx { stack = val : rest }
+                    Nothing  -> return Trap
         step ctx@EvalCtx{ stack = (VI32 v : VHandle w x y z : rest), segmem } I32SegmentStore =
-          if isValidHandle (VHandle w x y z)
+          if isInvalidHandle (VHandle w x y z)
             then return Trap
-            else return $ Done ctx { stack = rest, 
-                                     segmem = storeToSegment segmem (VHandle w x y z) (VI32 v) }
+            else let result = storeToSegment segmem (VHandle w x y z) (VI32 v)
+                 in case result of
+                    Just mem -> return $ Done ctx { stack = rest, segmem = mem }
+                    Nothing  -> return Trap
         step ctx@EvalCtx{ stack = (VI64 v : VHandle w x y z : rest), segmem } I64SegmentStore =
-          if isValidHandle (VHandle w x y z)
+          if isInvalidHandle (VHandle w x y z)
             then return Trap
-            else return $ Done ctx { stack = rest, 
-                                     segmem = storeToSegment segmem (VHandle w x y z) (VI64 v) }
+            else let result = storeToSegment segmem (VHandle w x y z) (VI64 v)
+                 in case result of
+                    Just mem -> return $ Done ctx { stack = rest, segmem = mem }
+                    Nothing  -> return Trap
         step ctx@EvalCtx{ stack = (VI32 v : rest), segmem } NewSegment =
             let result = VHandle (asWord32 $ size segmem)      (asWord32 0) 
                                  (asWord32 $ size segmem + asInt32 v) False
-            in return $ Done ctx { stack = result : rest
-                                 , segmem = newSegment segmem result (VI32 (asWord32 0))}
+            in let newseg = newSegment segmem result (VI32 (asWord32 0))
+               in case newseg of
+                    Just mem -> return $ Done ctx { stack = result : rest, segmem = mem }
+                    Nothing  -> return Trap
         step ctx@EvalCtx{ stack = (VHandle w x y z : rest), segmem } FreeSegment =
-            return $ Done ctx { stack = rest, segmem = freeSegment segmem (VHandle w x y z)}
+            let result = freeSegment segmem (VHandle w x y z)
+            in case result of
+                Just mem -> return $ Done ctx { stack = rest, segmem = mem }
+                Nothing  -> return Trap
         step ctx@EvalCtx{ stack = VI32 bound : VI32 base : VHandle w x y z : rest
                         , segmem } SegmentSlice =
             let result = sliceSegment (VHandle w x y z) (asInt32 base) (asInt32 bound)
-            in return $ Done ctx { stack = result : rest
-                                 , segmem = newSegment segmem result (VI32 (asWord32 0)) }
+            in case result of
+                Just val -> let newseg = newSegment segmem val (VI32 (asWord32 0))
+                            in case newseg of
+                                Just mem -> return $ Done ctx { stack = val : rest, segmem = mem }
+                                Nothing  -> return Trap
+                Nothing  -> return Trap
         step ctx@EvalCtx { stack = (VHandle w x y z : rest), segmem } HandleSegmentLoad =
-          if isValidHandle (VHandle w x y z)
+          if isInvalidHandle (VHandle w x y z)
             then return Trap
-            else return $ Done ctx { stack = loadFromSegment segmem (VHandle w x y z) : rest }
+            else let result = loadFromSegment segmem (VHandle w x y z)
+                 in case result of
+                    Just val -> return $ Done ctx { stack = val : rest }
+                    Nothing  -> return Trap
         step ctx@EvalCtx{ stack = (VHandle a b c d : VHandle w x y z : rest), 
                           segmem } HandleSegmentStore =
-          if isValidHandle (VHandle w x y z)
+          if isInvalidHandle (VHandle w x y z)
             then return Trap
-            else return $ Done ctx { stack = rest, segmem = storeToSegment segmem (VHandle w x y z) (VHandle a b c d) }
+            else let result = storeToSegment segmem (VHandle w x y z) (VHandle a b c d )
+                 in case result of
+                    Just mem -> return $ Done ctx { stack = rest, segmem = mem }
+                    Nothing  -> return Trap
         step ctx@EvalCtx{ stack = (VHandle w x y z : VI32 i : rest), segmem } HandleAdd =
             let result = VHandle w (x+i) y z
-            in return $ Done ctx { stack = result : rest
-                                 , segmem = newSegment segmem result (VI32 (asWord32 0))}
+            in let newseg = newSegment segmem result (VI32 (asWord32 0))
+               in case newseg of
+                   Just mem -> return $ Done ctx { stack = result : rest, segmem = mem }
+                   Nothing  -> return Trap
         step ctx@EvalCtx{ stack = (VHandle w x y z : VI32 i : rest), segmem } HandleSub =
             let result = VHandle w (x-i) y z
-            in return $ Done ctx { stack = result : rest
-                                 , segmem = newSegment segmem result (VI32 (asWord32 0))}
+            in let newseg = newSegment segmem result (VI32 (asWord32 0))
+               in case newseg of
+                   Just mem -> return $ Done ctx { stack = result : rest, segmem = mem }
+                   Nothing  -> return Trap
         -- End MS-Wasm instructions
         step EvalCtx{ stack } instr = error $ "Error during evaluation of instruction: " ++ show instr ++ ". Stack " ++ show stack
 eval _ _ HostInstance { funcType, hostCode } args = Just <$> hostCode args
