@@ -1184,7 +1184,7 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
                                  , segmem = newSegment segmem result (VI32 (asWord32 0))}
         step ctx@EvalCtx{ stack = (VHandle w x y z : rest), segmem } FreeSegment =
             return $ Done ctx { stack = rest, segmem = freeSegment segmem (VHandle w x y z)}
-        step ctx@EvalCtx{ stack = VHandle w x y z : VI32 base : VI32 bound : rest
+        step ctx@EvalCtx{ stack = VI32 bound : VI32 base : VHandle w x y z : rest
                         , segmem } SegmentSlice =
             let result = sliceSegment (VHandle w x y z) (asInt32 base) (asInt32 bound)
             in return $ Done ctx { stack = result : rest
