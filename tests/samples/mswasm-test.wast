@@ -67,7 +67,16 @@
   )
 )
 
+(func (export "ms_freesegment") (param $i1 i32) (result i32)
+    (local $h1 handle)
 
+    (set_local $h1 (new_segment (i32.const 32)))
+    (i32.segment_store (get_local $h1) (get_local $i1))
+
+    (set_local $h1 (handle.free_segment (get_local $h1)))
+    
+  )
+)
 
 (assert_return (invoke "ms_test_store_and_load" (i32.const 10)) (i32.const 10))
 (assert_return (invoke "ms_test_store_and_load" (i32.const 0xfedc6543)) (i32.const 0xfedc6543))
