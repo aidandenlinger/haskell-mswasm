@@ -78,3 +78,5 @@
 
 (assert_return (invoke "ms_segmentslice" (i32.const 5) (i32.const 10)) (i32.const 10))
 (assert_trap (invoke "ms_segmentslice" (i32.const 40) (i32.const 10)) "out-of-bounds handle")
+
+(assert_return (invoke "ms_handleloadstore" (i32.const 17)) (i32.const 17))
