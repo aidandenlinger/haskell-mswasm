@@ -114,8 +114,10 @@ storeToSegment mem key val =
 freeSegment :: SegmentMemory -> Value -> Maybe SegmentMemory
 freeSegment mem key =
     case key of
-        VHandle x y z b -> Just SegmentMemory { segments = Map.delete key (segments mem)
-                                                , size     = (size mem) - asInt32 (z - x) }
+        VHandle x y z b -> if   Map.member key (segments mem)
+                           then Just SegmentMemory { segments = Map.delete key (segments mem)
+                                                   , size     = (size mem) - asInt32 (z - x) }
+                           else Nothing
         _               -> Nothing
 
 newSegment :: SegmentMemory -> Value -> Value -> Maybe SegmentMemory
