@@ -170,3 +170,4 @@
 
 (assert_return (invoke "ms_handleloadstore_add" (i32.const 11) (i32.const -12)) (i32.const -1))
 (assert_return (invoke "ms_handleloadstore_add" (i32.const 1023) (i32.const 17)) (i32.const 1040))
+(assert_trap   (invoke "ms_handleloadstore_trap" (i32.const 20)) "invalid handle load")

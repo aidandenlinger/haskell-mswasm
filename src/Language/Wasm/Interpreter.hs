@@ -135,7 +135,7 @@ sliceSegment (VHandle x y z b) base bound =
 sliceSegment _                 _    _     = Nothing
 
 isInvalidHandle :: Value -> Bool
-isInvalidHandle (VHandle x y z b) = (x + y > z) && (not b)
+isInvalidHandle (VHandle x y z b) = (x + y > z) || b
 isInvalidHandle _                 = False
 
 -- end MS-Wasm interpreter functions
@@ -1205,8 +1205,9 @@ eval budget store FunctionInstance { funcType, moduleInstance, code = Function {
             then return Trap
             else let result = loadFromSegment segmem (VHandle w x y z)
                  in case result of
-                    Just val -> return $ Done ctx { stack = val : rest }
-                    Nothing  -> return Trap
+                    Just (VHandle t u v False) -> return $ Done ctx { 
+                                                           stack = (VHandle t u v False) : rest }
+                    _                          -> return Trap
         step ctx@EvalCtx{ stack = (VHandle a b c d : VHandle w x y z : rest), 
                           segmem } HandleSegmentStore =
           if isInvalidHandle (VHandle w x y z)
