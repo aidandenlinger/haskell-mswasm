@@ -52,6 +52,10 @@ toBinaryTest :: String -> IO ()
 toBinaryTest input =
   toBinary ("./tests/toBinaryTest/" ++ input) "./tests/toBinaryTest/bin.wasm"
 
+compile :: String -> IO ()
+compile input =
+  toBinary ("./tests/toBinaryTest/" ++ input ++ ".wat") ("./tests/graalBin/" ++ input ++ ".wasm")
+
 -- | Takes in a filepath to a binary and outputs the Module representation.
 toModule :: String -> IO ()
 toModule input = do
