@@ -131,7 +131,7 @@ newSegment mem key val =
 
 sliceSegment :: Value -> Int32 -> Int32 -> Maybe Value
 sliceSegment (VHandle x y z b) base bound = 
-    Just $ (VHandle (asWord32 $ max (asInt32 x) base) y (asWord32 $ min (asInt32 z) bound) b)
+    Just $ (VHandle (asWord32 $ (asInt32 x + base)) y (asWord32 $ (asInt32 z - bound)) b)
 sliceSegment _                 _    _     = Nothing
 
 isInvalidHandle :: Value -> Bool
