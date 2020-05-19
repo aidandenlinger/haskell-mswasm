@@ -116,7 +116,7 @@ freeSegment mem key =
     case key of
         VHandle x y z b -> if   Map.member key (segments mem)
                            then Just SegmentMemory { segments = Map.delete key (segments mem)
-                                                   , size     = (size mem) - asInt32 (z - x) }
+                                                   , size     = (size mem) }
                            else Nothing
         _               -> Nothing
 
