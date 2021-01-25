@@ -1334,6 +1334,7 @@ data PlainInstr =
     | HandleSegmentStore
     | HandleAdd
     | HandleSub
+    | HandleOffset
     deriving (Show, Eq, Generic, NFData)
 
 data TypeDef = TypeDef (Maybe Ident) FuncType deriving (Show, Eq, Generic, NFData)
