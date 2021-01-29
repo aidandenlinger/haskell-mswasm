@@ -5,7 +5,7 @@
     (set_local $y (i32.const 7))
     (set_local $i (i32.const 0))
     (set_local $addr (new_segment (i32.const 32)))
-    (i32.store (get_local $addr) (i32.const 0))
+    (i32.segment_store (get_local $addr) (i32.const 0))
     (block
       (loop
         (get_local $addr)
@@ -27,7 +27,7 @@
   )
 
    (func (export "_main") (result i32)
-      (call $loop (i32.const 5) (i32.const 10))
+      (call $loop)
    )
 
 )

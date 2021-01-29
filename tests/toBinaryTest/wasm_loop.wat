@@ -28,6 +28,6 @@
   (export "loop" (func $loop))
 
    (func (export "_main") (result i32)
-      (call $loop (i32.const 5) (i32.const 10))
+      (call $loop)
    )
 )
