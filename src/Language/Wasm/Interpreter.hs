@@ -1289,7 +1289,7 @@ eval budget store FunctionInstance {funcType, moduleInstance, code = Function {l
            in case newseg of
                 Just mem -> return $ Done ctx {stack = result : rest, segmem = mem}
                 Nothing -> return Trap
-    step ctx@EvalCtx {stack = (VHandle w x y z : VI32 i : rest), segmem} HandleOffset =
+    step ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem} HandleOffset =
       return $ Done ctx {stack = VI32 x : rest}
     -- End MS-Wasm instructions
     step EvalCtx {stack} instr = error $ "Error during evaluation of instruction: " ++ show instr ++ ". Stack " ++ show stack
