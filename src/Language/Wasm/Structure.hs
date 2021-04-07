@@ -201,7 +201,8 @@ data Instruction index =
     | HandleSegmentStore
     | HandleAdd
     | HandleSub
-    | HandleOffset
+    | HandleGetOffset
+    | HandleSetOffset
     deriving (Show, Eq, Generic, NFData)
 
 type Expression = [Instruction Natural]

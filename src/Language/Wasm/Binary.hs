@@ -506,7 +506,8 @@ instance Serialize (Instruction Natural) where
   put HandleSegmentStore = putWord8 0xF8
   put HandleAdd = putWord8 0xF9
   put HandleSub = putWord8 0xFA
-  put HandleOffset = putWord8 0xFB
+  put HandleGetOffset = putWord8 0xFB
+  put HandleSetOffset = putWord8 0xFC
   put _ = error "Undefined instruction or type"
 
   get = do
@@ -577,7 +578,8 @@ instance Serialize (Instruction Natural) where
       0xF8 -> return $ HandleSegmentStore
       0xF9 -> return $ HandleAdd
       0xFA -> return $ HandleSub
-      0xFB -> return $ HandleOffset
+      0xFB -> return $ HandleGetOffset
+      0xFC -> return $ HandleSetOffset
       -- Numeric instructions
       0x41 -> I32Const <$> getSLEB128 32
       0x42 -> I64Const <$> getSLEB128 64

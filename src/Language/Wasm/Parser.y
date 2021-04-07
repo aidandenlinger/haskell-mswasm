@@ -317,7 +317,8 @@ import Language.Wasm.Lexer (
 'handle.segment_store'{ Lexeme _ (TKeyword "handle.segment_store") }
 'handle.add'          { Lexeme _ (TKeyword "handle.add")}
 'handle.sub'          { Lexeme _ (TKeyword "handle.sub")}
-'handle.offset'       { Lexeme _ (TKeyword "handle.offset")}
+'handle.get_offset'       { Lexeme _ (TKeyword "handle.get_offset")}
+'handle.set_offset'       { Lexeme _ (TKeyword "handle.set_offset")}
 -- end ms-wasm extension
 -- script extension
 'binary'              { Lexeme _ (TKeyword "binary") }
@@ -595,7 +596,8 @@ plaininstr :: { PlainInstr }
     | 'handle.segment_store'         { HandleSegmentStore }
     | 'handle.add'                   { HandleAdd }
     | 'handle.sub'                   { HandleSub }
-    | 'handle.offset'                { HandleOffset }
+    | 'handle.get_offset'            { HandleGetOffset }
+    | 'handle.set_offset'            { HandleSetOffset }
 
 typeuse :: { TypeUse }
     : '(' typeuse1 { $2 }
@@ -1334,7 +1336,8 @@ data PlainInstr =
     | HandleSegmentStore
     | HandleAdd
     | HandleSub
-    | HandleOffset
+    | HandleGetOffset
+    | HandleSetOffset
     deriving (Show, Eq, Generic, NFData)
 
 data TypeDef = TypeDef (Maybe Ident) FuncType deriving (Show, Eq, Generic, NFData)
@@ -1778,7 +1781,8 @@ desugarize fields = do
         synInstrToStruct _ (PlainInstr HandleSegmentStore) = return $ S.HandleSegmentStore
         synInstrToStruct _ (PlainInstr HandleAdd) = return $ S.HandleAdd
         synInstrToStruct _ (PlainInstr HandleSub) = return $ S.HandleSub
-        synInstrToStruct _ (PlainInstr HandleOffset) = return $ S.HandleOffset
+        synInstrToStruct _ (PlainInstr HandleGetOffset) = return $ S.HandleGetOffset
+        synInstrToStruct _ (PlainInstr HandleSetOffset) = return $ S.HandleSetOffset
         -- End MS-Wasm
         synInstrToStruct ctx BlockInstr {label, resultType, body} =
             let ctx' = ctx { ctxLabels = label : ctxLabels ctx } in
