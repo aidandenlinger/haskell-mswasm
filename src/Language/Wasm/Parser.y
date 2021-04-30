@@ -134,29 +134,29 @@ import Language.Wasm.Lexer (
 'tee_local'           { Lexeme _ (TKeyword "tee_local") }
 'get_global'          { Lexeme _ (TKeyword "get_global") }
 'set_global'          { Lexeme _ (TKeyword "set_global") }
-'i32.load'            { Lexeme _ (TKeyword "i32.load") }
-'i64.load'            { Lexeme _ (TKeyword "i64.load") }
+'i32.segment_load'     { Lexeme _ (TKeyword "i32.load") }
+'i64.segment_load'     { Lexeme _ (TKeyword "i64.load") }
 'f32.load'            { Lexeme _ (TKeyword "f32.load") }
 'f64.load'            { Lexeme _ (TKeyword "f64.load") }
-'i32.load8_s'         { Lexeme _ (TKeyword "i32.load8_s") }
-'i32.load8_u'         { Lexeme _ (TKeyword "i32.load8_u") }
-'i32.load16_s'        { Lexeme _ (TKeyword "i32.load16_s") }
-'i32.load16_u'        { Lexeme _ (TKeyword "i32.load16_u") }
-'i64.load8_s'         { Lexeme _ (TKeyword "i64.load8_s") }
-'i64.load8_u'         { Lexeme _ (TKeyword "i64.load8_u") }
-'i64.load16_s'        { Lexeme _ (TKeyword "i64.load16_s") }
-'i64.load16_u'        { Lexeme _ (TKeyword "i64.load16_u") }
-'i64.load32_s'        { Lexeme _ (TKeyword "i64.load32_s") }
-'i64.load32_u'        { Lexeme _ (TKeyword "i64.load32_u") }
-'i32.store'           { Lexeme _ (TKeyword "i32.store") }
-'i64.store'           { Lexeme _ (TKeyword "i64.store") }
+'i32.segment_load8_s'  { Lexeme _ (TKeyword "i32.load8_s") }
+'i32.segment_load8_u'  { Lexeme _ (TKeyword "i32.load8_u") }
+'i32.segment_load16_s' { Lexeme _ (TKeyword "i32.load16_s") }
+'i32.segment_load16_u' { Lexeme _ (TKeyword "i32.load16_u") }
+'i64.segment_load8_s'  { Lexeme _ (TKeyword "i64.load8_s") }
+'i64.segment_load8_u'  { Lexeme _ (TKeyword "i64.load8_u") }
+'i64.segment_load16_s' { Lexeme _ (TKeyword "i64.load16_s") }
+'i64.segment_load16_u' { Lexeme _ (TKeyword "i64.load16_u") }
+'i64.segment_load32_s' { Lexeme _ (TKeyword "i64.load32_s") }
+'i64.segment_load32_u' { Lexeme _ (TKeyword "i64.load32_u") }
+'i32.segment_store'    { Lexeme _ (TKeyword "i32.store") }
+'i64.segment_store'    { Lexeme _ (TKeyword "i64.store") }
 'f32.store'           { Lexeme _ (TKeyword "f32.store") }
 'f64.store'           { Lexeme _ (TKeyword "f64.store") }
-'i32.store8'          { Lexeme _ (TKeyword "i32.store8") }
-'i32.store16'         { Lexeme _ (TKeyword "i32.store16") }
-'i64.store8'          { Lexeme _ (TKeyword "i64.store8") }
-'i64.store16'         { Lexeme _ (TKeyword "i64.store16") }
-'i64.store32'         { Lexeme _ (TKeyword "i64.store32") }
+'i32.segment_store8'   { Lexeme _ (TKeyword "i32.store8") }
+'i32.segment_store16'  { Lexeme _ (TKeyword "i32.store16") }
+'i64.segment_store8'   { Lexeme _ (TKeyword "i64.store8") }
+'i64.segment_store16'  { Lexeme _ (TKeyword "i64.store16") }
+'i64.segment_store32'  { Lexeme _ (TKeyword "i64.store32") }
 'current_memory'      { Lexeme _ (TKeyword "current_memory") }
 'grow_memory'         { Lexeme _ (TKeyword "grow_memory") }
 'memory.size'         { Lexeme _ (TKeyword "memory.size") }
@@ -306,10 +306,10 @@ import Language.Wasm.Lexer (
 'start'               { Lexeme _ (TKeyword "start") }
 'module'              { Lexeme _ (TKeyword "module") }
 -- ms-wasm extension
-'i32.segment_load'    { Lexeme _ (TKeyword "i32.segment_load") }
-'i64.segment_load'    { Lexeme _ (TKeyword "i64.segment_load") }
-'i32.segment_store'   { Lexeme _ (TKeyword "i32.segment_store") }
-'i64.segment_store'   { Lexeme _ (TKeyword "i64.segment_store") }
+-- 'i32.segment_load'    { Lexeme _ (TKeyword "i32.segment_load") }
+-- 'i64.segment_load'    { Lexeme _ (TKeyword "i64.segment_load") }
+-- 'i32.segment_store'   { Lexeme _ (TKeyword "i32.segment_store") }
+-- 'i64.segment_store'   { Lexeme _ (TKeyword "i64.segment_store") }
 'new_segment'         { Lexeme _ (TKeyword "new_segment") }
 'free_segment'        { Lexeme _ (TKeyword "free_segment") }
 'segment_slice'       { Lexeme _ (TKeyword "segment_slice") }
@@ -429,29 +429,29 @@ plaininstr :: { PlainInstr }
     | 'get_global' index             { GetGlobal $2 }
     | 'set_global' index             { SetGlobal $2 }
     -- memory instructions
-    | 'i32.load' memarg4             { I32Load $2 }
-    | 'i64.load' memarg8             { I64Load $2 }
+    | 'i32.segment_load'             { I32SegmentLoad }
+    | 'i64.segment_load'             { I64SegmentLoad }
     | 'f32.load' memarg4             { F32Load $2 }
     | 'f64.load' memarg8             { F64Load $2 }
-    | 'i32.load8_s' memarg1          { I32Load8S $2 }
-    | 'i32.load8_u' memarg1          { I32Load8U $2 }
-    | 'i32.load16_s' memarg2         { I32Load16S $2 }
-    | 'i32.load16_u' memarg2         { I32Load16U $2 }
-    | 'i64.load8_s' memarg1          { I64Load8S $2 }
-    | 'i64.load8_u' memarg1          { I64Load8U $2 }
-    | 'i64.load16_s' memarg2         { I64Load16S $2 }
-    | 'i64.load16_u' memarg2         { I64Load16U $2 }
-    | 'i64.load32_s' memarg4         { I64Load32S $2 }
-    | 'i64.load32_u' memarg4         { I64Load32U $2 }
-    | 'i32.store' memarg4            { I32Store $2 }
-    | 'i64.store' memarg8            { I64Store $2 }
+    | 'i32.segment_load8_s'          { I32SegmentLoad8S }
+    | 'i32.segment_load8_u'          { I32SegmentLoad8U }
+    | 'i32.segment_load16_s'         { I32SegmentLoad16S }
+    | 'i32.segment_load16_u'         { I32SegmentLoad16U }
+    | 'i64.segment_load8_s'          { I64SegmentLoad8S }
+    | 'i64.segment_load8_u'          { I64SegmentLoad8U }
+    | 'i64.segment_load16_s'         { I64SegmentLoad16S }
+    | 'i64.segment_load16_u'         { I64SegmentLoad16U }
+    | 'i64.segment_load32_s'         { I64SegmentLoad32S }
+    | 'i64.segment_load32_u'         { I64SegmentLoad32U }
+    | 'i32.segment_store'            { I32SegmentStore }
+    | 'i64.segment_store'            { I64SegmentStore }
     | 'f32.store' memarg4            { F32Store $2 }
     | 'f64.store' memarg8            { F64Store $2 }
-    | 'i32.store8' memarg1           { I32Store8 $2 }
-    | 'i32.store16' memarg2          { I32Store16 $2 }
-    | 'i64.store8' memarg1           { I64Store8 $2 }
-    | 'i64.store16' memarg2          { I64Store16 $2 }
-    | 'i64.store32' memarg4          { I64Store32 $2 }
+    | 'i32.segment_store8'           { I32SegmentStore8 }
+    | 'i32.segment_store16'          { I32SegmentStore16 }
+    | 'i64.segment_store8'           { I64SegmentStore8 }
+    | 'i64.segment_store16'          { I64SegmentStore16 }
+    | 'i64.segment_store32'          { I64SegmentStore32 }
     | 'current_memory'               { CurrentMemory }
     | 'grow_memory'                  { GrowMemory }
     | 'memory.size'                  { CurrentMemory }
@@ -585,10 +585,10 @@ plaininstr :: { PlainInstr }
     | 'f32.reinterpret/i32'          { FReinterpretI BS32 }
     | 'f64.reinterpret/i64'          { FReinterpretI BS64 }
     -- MSWasm instructions
-    | 'i32.segment_load'             { I32SegmentLoad }
-    | 'i64.segment_load'             { I64SegmentLoad }
-    | 'i32.segment_store'            { I32SegmentStore }
-    | 'i64.segment_store'            { I64SegmentStore }
+    -- | 'i32.segment_load'             { I32SegmentLoad }
+    -- | 'i64.segment_load'             { I64SegmentLoad }
+    -- | 'i32.segment_store'            { I32SegmentStore }
+    -- | 'i64.segment_store'            { I64SegmentStore }
     | 'new_segment'                  { NewSegment }
     | 'free_segment'                 { FreeSegment }
     | 'segment_slice'                { SegmentSlice }
@@ -1275,29 +1275,29 @@ data PlainInstr =
     | GetGlobal GlobalIndex
     | SetGlobal GlobalIndex
     -- Memory instructions
-    | I32Load MemArg
-    | I64Load MemArg
+    | I32SegmentLoad
+    | I64SegmentLoad
     | F32Load MemArg
     | F64Load MemArg
-    | I32Load8S MemArg
-    | I32Load8U MemArg
-    | I32Load16S MemArg
-    | I32Load16U MemArg
-    | I64Load8S MemArg
-    | I64Load8U MemArg
-    | I64Load16S MemArg
-    | I64Load16U MemArg
-    | I64Load32S MemArg
-    | I64Load32U MemArg
-    | I32Store MemArg
-    | I64Store MemArg
+    | I32SegmentLoad8S 
+    | I32SegmentLoad8U 
+    | I32SegmentLoad16S
+    | I32SegmentLoad16U
+    | I64SegmentLoad8S 
+    | I64SegmentLoad8U 
+    | I64SegmentLoad16S
+    | I64SegmentLoad16U
+    | I64SegmentLoad32S
+    | I64SegmentLoad32U
+    | I32SegmentStore 
+    | I64SegmentStore 
     | F32Store MemArg
     | F64Store MemArg
-    | I32Store8 MemArg
-    | I32Store16 MemArg
-    | I64Store8 MemArg
-    | I64Store16 MemArg
-    | I64Store32 MemArg
+    | I32SegmentStore8 
+    | I32SegmentStore16
+    | I64SegmentStore8 
+    | I64SegmentStore16
+    | I64SegmentStore32
     | CurrentMemory
     | GrowMemory
     -- Numeric instructions
@@ -1325,10 +1325,10 @@ data PlainInstr =
     | IReinterpretF BitSize
     | FReinterpretI BitSize
     -- MSWasm instructions
-    | I32SegmentLoad
-    | I64SegmentLoad
-    | I32SegmentStore
-    | I64SegmentStore
+    -- | I32SegmentLoad
+    -- | I64SegmentLoad
+    -- | I32SegmentStore
+    -- | I64SegmentStore
     | NewSegment
     | FreeSegment
     | SegmentSlice
@@ -1721,29 +1721,29 @@ desugarize fields = do
             case getGlobalIndex ctxMod globalIdx of
                 Just idx -> return $ S.SetGlobal idx
                 Nothing -> Left "unknown global"
-        synInstrToStruct _ (PlainInstr (I32Load memArg)) = return $ S.I32Load memArg
-        synInstrToStruct _ (PlainInstr (I64Load memArg)) = return $ S.I64Load memArg
+        synInstrToStruct _ (PlainInstr (I32SegmentLoad)) = return $ S.I32SegmentLoad
+        synInstrToStruct _ (PlainInstr (I64SegmentLoad)) = return $ S.I64SegmentLoad
         synInstrToStruct _ (PlainInstr (F32Load memArg)) = return $ S.F32Load memArg
         synInstrToStruct _ (PlainInstr (F64Load memArg)) = return $ S.F64Load memArg
-        synInstrToStruct _ (PlainInstr (I32Load8S memArg)) = return $ S.I32Load8S memArg
-        synInstrToStruct _ (PlainInstr (I32Load8U memArg)) = return $ S.I32Load8U memArg
-        synInstrToStruct _ (PlainInstr (I32Load16S memArg)) = return $ S.I32Load16S memArg
-        synInstrToStruct _ (PlainInstr (I32Load16U memArg)) = return $ S.I32Load16U memArg
-        synInstrToStruct _ (PlainInstr (I64Load8S memArg)) = return $ S.I64Load8S memArg
-        synInstrToStruct _ (PlainInstr (I64Load8U memArg)) = return $ S.I64Load8U memArg
-        synInstrToStruct _ (PlainInstr (I64Load16S memArg)) = return $ S.I64Load16S memArg
-        synInstrToStruct _ (PlainInstr (I64Load16U memArg)) = return $ S.I64Load16U memArg
-        synInstrToStruct _ (PlainInstr (I64Load32S memArg)) = return $ S.I64Load32S memArg
-        synInstrToStruct _ (PlainInstr (I64Load32U memArg)) = return $ S.I64Load32U memArg
-        synInstrToStruct _ (PlainInstr (I32Store memArg)) = return $ S.I32Store memArg
-        synInstrToStruct _ (PlainInstr (I64Store memArg)) = return $ S.I64Store memArg
+        synInstrToStruct _ (PlainInstr (I32SegmentLoad8S)) = return $ S.I32SegmentLoad8S
+        synInstrToStruct _ (PlainInstr (I32SegmentLoad8U)) = return $ S.I32SegmentLoad8U
+        synInstrToStruct _ (PlainInstr (I32SegmentLoad16S)) = return $ S.I32SegmentLoad16S
+        synInstrToStruct _ (PlainInstr (I32SegmentLoad16U)) = return $ S.I32SegmentLoad16U
+        synInstrToStruct _ (PlainInstr (I64SegmentLoad8S)) = return $ S.I64SegmentLoad8S
+        synInstrToStruct _ (PlainInstr (I64SegmentLoad8U)) = return $ S.I64SegmentLoad8U
+        synInstrToStruct _ (PlainInstr (I64SegmentLoad16S)) = return $ S.I64SegmentLoad16S
+        synInstrToStruct _ (PlainInstr (I64SegmentLoad16U)) = return $ S.I64SegmentLoad16U
+        synInstrToStruct _ (PlainInstr (I64SegmentLoad32S)) = return $ S.I64SegmentLoad32S
+        synInstrToStruct _ (PlainInstr (I64SegmentLoad32U)) = return $ S.I64SegmentLoad32U
+        synInstrToStruct _ (PlainInstr (I32SegmentStore)) = return $ S.I32SegmentStore
+        synInstrToStruct _ (PlainInstr (I64SegmentStore)) = return $ S.I64SegmentStore
         synInstrToStruct _ (PlainInstr (F32Store memArg)) = return $ S.F32Store memArg
         synInstrToStruct _ (PlainInstr (F64Store memArg)) = return $ S.F64Store memArg
-        synInstrToStruct _ (PlainInstr (I32Store8 memArg)) = return $ S.I32Store8 memArg
-        synInstrToStruct _ (PlainInstr (I32Store16 memArg)) = return $ S.I32Store16 memArg
-        synInstrToStruct _ (PlainInstr (I64Store8 memArg)) = return $ S.I64Store8 memArg
-        synInstrToStruct _ (PlainInstr (I64Store16 memArg)) = return $ S.I64Store16 memArg
-        synInstrToStruct _ (PlainInstr (I64Store32 memArg)) = return $ S.I64Store32 memArg
+        synInstrToStruct _ (PlainInstr (I32SegmentStore8)) = return $ S.I32SegmentStore8
+        synInstrToStruct _ (PlainInstr (I32SegmentStore16)) = return $ S.I32SegmentStore16
+        synInstrToStruct _ (PlainInstr (I64SegmentStore8)) = return $ S.I64SegmentStore8
+        synInstrToStruct _ (PlainInstr (I64SegmentStore16)) = return $ S.I64SegmentStore16
+        synInstrToStruct _ (PlainInstr (I64SegmentStore32)) = return $ S.I64SegmentStore32
         synInstrToStruct _ (PlainInstr CurrentMemory) = return $ S.CurrentMemory
         synInstrToStruct _ (PlainInstr GrowMemory) = return $ S.GrowMemory
         synInstrToStruct _ (PlainInstr (I32Const val)) = return $ S.I32Const $ integerToWord32 val
@@ -1770,10 +1770,10 @@ desugarize fields = do
         synInstrToStruct _ (PlainInstr (IReinterpretF sz)) = return $ S.IReinterpretF sz
         synInstrToStruct _ (PlainInstr (FReinterpretI sz)) = return $ S.FReinterpretI sz
         -- MSWasm
-        synInstrToStruct _ (PlainInstr I32SegmentLoad) = return $ S.I32SegmentLoad
-        synInstrToStruct _ (PlainInstr I64SegmentLoad) = return $ S.I64SegmentLoad
-        synInstrToStruct _ (PlainInstr I32SegmentStore) = return $ S.I32SegmentStore
-        synInstrToStruct _ (PlainInstr I64SegmentStore) = return $ S.I64SegmentStore
+        -- synInstrToStruct _ (PlainInstr I32SegmentLoad) = return $ S.I32SegmentLoad
+        -- synInstrToStruct _ (PlainInstr I64SegmentLoad) = return $ S.I64SegmentLoad
+        -- synInstrToStruct _ (PlainInstr I32SegmentStore) = return $ S.I32SegmentStore
+        -- synInstrToStruct _ (PlainInstr I64SegmentStore) = return $ S.I64SegmentStore
         synInstrToStruct _ (PlainInstr NewSegment) = return $ S.NewSegment
         synInstrToStruct _ (PlainInstr FreeSegment) = return $ S.FreeSegment
         synInstrToStruct _ (PlainInstr SegmentSlice) = return $ S.SegmentSlice

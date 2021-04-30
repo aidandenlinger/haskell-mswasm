@@ -36,8 +36,8 @@ module Language.Wasm.Builder (
     abs_f, neg_f, ceil_f, floor_f, trunc_f, nearest_f, sqrt_f,
     lt_f, gt_f, le_f, ge_f,
     wrap, trunc_s, trunc_u, extend_s, extend_u, convert_s, convert_u, demote, promote, reinterpret,
-    load, load8_u, load8_s, load16_u, load16_s, load32_u, load32_s,
-    store, store8, store16, store32,
+    -- load, load8_u, load8_s, load16_u, load16_s, load32_u, load32_s,
+    -- store, store8, store16, store32,
     memorySize, growMemory,
     nop, Language.Wasm.Builder.drop, select,
     call, callIndirect, finish, br, brIf, brTable,
@@ -507,158 +507,158 @@ reinterpret t val = do
         _ -> error "Impossible by type constraint"
     return Proxy
 
-load :: (ValueTypeable t, Producer addr, OutType addr ~ Proxy I32, Integral offset, Integral align)
-    => Proxy t
-    -> addr
-    -> offset
-    -> align
-    -> GenFun (Proxy t)
-load t addr offset align = do
-    produce addr
-    case getValueType t of
-        I32    -> appendExpr 
-          [I32Load $ MemArg (fromIntegral offset) (fromIntegral align)]
-        I64    -> appendExpr 
-          [I64Load $ MemArg (fromIntegral offset) (fromIntegral align)]
-        F32    -> appendExpr 
-          [F32Load $ MemArg (fromIntegral offset) (fromIntegral align)]
-        F64    -> appendExpr 
-          [F64Load $ MemArg (fromIntegral offset) (fromIntegral align)]
-        Handle -> error "load not implemented for Handles"
-    return Proxy
+-- load :: (ValueTypeable t, Producer addr, OutType addr ~ Proxy I32, Integral offset, Integral align)
+--     => Proxy t
+--     -> addr
+--     -> offset
+--     -> align
+--     -> GenFun (Proxy t)
+-- load t addr offset align = do
+--     produce addr
+--     case getValueType t of
+--         I32    -> appendExpr 
+--           [I32Load $ MemArg (fromIntegral offset) (fromIntegral align)]
+--         I64    -> appendExpr 
+--           [I64Load $ MemArg (fromIntegral offset) (fromIntegral align)]
+--         F32    -> appendExpr 
+--           [F32Load $ MemArg (fromIntegral offset) (fromIntegral align)]
+--         F64    -> appendExpr 
+--           [F64Load $ MemArg (fromIntegral offset) (fromIntegral align)]
+--         Handle -> error "load not implemented for Handles"
+--     return Proxy
 
-load8_u :: (ValueTypeable t, IsInt (Proxy t) ~ True, Producer addr, OutType addr ~ Proxy I32, Integral offset, Integral align)
-    => Proxy t
-    -> addr
-    -> offset
-    -> align
-    -> GenFun (Proxy t)
-load8_u t addr offset align = do
-    produce addr
-    case getValueType t of
-        I32 -> appendExpr [I32Load8U $ MemArg (fromIntegral offset) (fromIntegral align)]
-        I64 -> appendExpr [I64Load8U $ MemArg (fromIntegral offset) (fromIntegral align)]
-        _ -> error "Impossible by type constraint"
-    return Proxy
+-- load8_u :: (ValueTypeable t, IsInt (Proxy t) ~ True, Producer addr, OutType addr ~ Proxy I32, Integral offset, Integral align)
+--     => Proxy t
+--     -> addr
+--     -> offset
+--     -> align
+--     -> GenFun (Proxy t)
+-- load8_u t addr offset align = do
+--     produce addr
+--     case getValueType t of
+--         I32 -> appendExpr [I32Load8U $ MemArg (fromIntegral offset) (fromIntegral align)]
+--         I64 -> appendExpr [I64Load8U $ MemArg (fromIntegral offset) (fromIntegral align)]
+--         _ -> error "Impossible by type constraint"
+--     return Proxy
 
-load8_s :: (ValueTypeable t, IsInt (Proxy t) ~ True, Producer addr, OutType addr ~ Proxy I32, Integral offset, Integral align)
-    => Proxy t
-    -> addr
-    -> offset
-    -> align
-    -> GenFun (Proxy t)
-load8_s t addr offset align = do
-    produce addr
-    case getValueType t of
-        I32 -> appendExpr [I32Load8S $ MemArg (fromIntegral offset) (fromIntegral align)]
-        I64 -> appendExpr [I64Load8S $ MemArg (fromIntegral offset) (fromIntegral align)]
-        _ -> error "Impossible by type constraint"
-    return Proxy
+-- load8_s :: (ValueTypeable t, IsInt (Proxy t) ~ True, Producer addr, OutType addr ~ Proxy I32, Integral offset, Integral align)
+--     => Proxy t
+--     -> addr
+--     -> offset
+--     -> align
+--     -> GenFun (Proxy t)
+-- load8_s t addr offset align = do
+--     produce addr
+--     case getValueType t of
+--         I32 -> appendExpr [I32Load8S $ MemArg (fromIntegral offset) (fromIntegral align)]
+--         I64 -> appendExpr [I64Load8S $ MemArg (fromIntegral offset) (fromIntegral align)]
+--         _ -> error "Impossible by type constraint"
+--     return Proxy
 
-load16_u :: (ValueTypeable t, IsInt (Proxy t) ~ True, Producer addr, OutType addr ~ Proxy I32, Integral offset, Integral align)
-    => Proxy t
-    -> addr
-    -> offset
-    -> align
-    -> GenFun (Proxy t)
-load16_u t addr offset align = do
-    produce addr
-    case getValueType t of
-        I32 -> appendExpr [I32Load16U $ MemArg (fromIntegral offset) (fromIntegral align)]
-        I64 -> appendExpr [I64Load16U $ MemArg (fromIntegral offset) (fromIntegral align)]
-        _ -> error "Impossible by type constraint"
-    return Proxy
+-- load16_u :: (ValueTypeable t, IsInt (Proxy t) ~ True, Producer addr, OutType addr ~ Proxy I32, Integral offset, Integral align)
+--     => Proxy t
+--     -> addr
+--     -> offset
+--     -> align
+--     -> GenFun (Proxy t)
+-- load16_u t addr offset align = do
+--     produce addr
+--     case getValueType t of
+--         I32 -> appendExpr [I32Load16U $ MemArg (fromIntegral offset) (fromIntegral align)]
+--         I64 -> appendExpr [I64Load16U $ MemArg (fromIntegral offset) (fromIntegral align)]
+--         _ -> error "Impossible by type constraint"
+--     return Proxy
 
-load16_s :: (ValueTypeable t, IsInt (Proxy t) ~ True, Producer addr, OutType addr ~ Proxy I32, Integral offset, Integral align)
-    => Proxy t
-    -> addr
-    -> offset
-    -> align
-    -> GenFun (Proxy t)
-load16_s t addr offset align = do
-    produce addr
-    case getValueType t of
-        I32 -> appendExpr [I32Load16S $ MemArg (fromIntegral offset) (fromIntegral align)]
-        I64 -> appendExpr [I64Load16S $ MemArg (fromIntegral offset) (fromIntegral align)]
-        _ -> error "Impossible by type constraint"
-    return Proxy
+-- load16_s :: (ValueTypeable t, IsInt (Proxy t) ~ True, Producer addr, OutType addr ~ Proxy I32, Integral offset, Integral align)
+--     => Proxy t
+--     -> addr
+--     -> offset
+--     -> align
+--     -> GenFun (Proxy t)
+-- load16_s t addr offset align = do
+--     produce addr
+--     case getValueType t of
+--         I32 -> appendExpr [I32Load16S $ MemArg (fromIntegral offset) (fromIntegral align)]
+--         I64 -> appendExpr [I64Load16S $ MemArg (fromIntegral offset) (fromIntegral align)]
+--         _ -> error "Impossible by type constraint"
+--     return Proxy
 
-load32_u :: (ValueTypeable t, IsInt (Proxy t) ~ True, Producer addr, OutType addr ~ Proxy I32, Integral offset, Integral align)
-    => Proxy t
-    -> addr
-    -> offset
-    -> align
-    -> GenFun (Proxy t)
-load32_u t addr offset align = do
-    produce addr
-    appendExpr [I64Load32U $ MemArg (fromIntegral offset) (fromIntegral align)]
-    return Proxy
+-- -- load32_u :: (ValueTypeable t, IsInt (Proxy t) ~ True, Producer addr, OutType addr ~ Proxy I32, Integral offset, Integral align)
+--     -- => Proxy t
+--     -- -> addr
+--     -- -> offset
+--     -- -> align
+--     -- -> GenFun (Proxy t)
+-- -- load32_u t addr offset align = do
+--     -- produce addr
+--     -- appendExpr [I64Load32U $ MemArg (fromIntegral offset) (fromIntegral align)]
+--     -- return Proxy
 
-load32_s :: (ValueTypeable t, IsInt (Proxy t) ~ True, Producer addr, OutType addr ~ Proxy I32, Integral offset, Integral align)
-    => Proxy t
-    -> addr
-    -> offset
-    -> align
-    -> GenFun (Proxy t)
-load32_s t addr offset align = do
-    produce addr
-    appendExpr [I64Load32S $ MemArg (fromIntegral offset) (fromIntegral align)]
-    return Proxy
+-- -- load32_s :: (ValueTypeable t, IsInt (Proxy t) ~ True, Producer addr, OutType addr ~ Proxy I32, Integral offset, Integral align)
+--     -- => Proxy t
+--     -- -> addr
+--     -- -> offset
+--     -- -> align
+--     -- -> GenFun (Proxy t)
+-- -- load32_s t addr offset align = do
+--     -- produce addr
+--     -- appendExpr [I64Load32S $ MemArg (fromIntegral offset) (fromIntegral align)]
+--     -- return Proxy
 
-store :: (Producer addr, OutType addr ~ Proxy I32, Producer val, Integral offset, Integral align)
-    => addr
-    -> val
-    -> offset
-    -> align
-    -> GenFun ()
-store addr val offset align = do
-    produce addr
-    produce val
-    case asValueType val of
-        I32 -> appendExpr [I32Store $ MemArg (fromIntegral offset) (fromIntegral align)]
-        I64 -> appendExpr [I64Store $ MemArg (fromIntegral offset) (fromIntegral align)]
-        F32 -> appendExpr [F32Store $ MemArg (fromIntegral offset) (fromIntegral align)]
-        F64 -> appendExpr [F64Store $ MemArg (fromIntegral offset) (fromIntegral align)]
-        Handle -> error "store not implemented for Handles"
+-- store :: (Producer addr, OutType addr ~ Proxy I32, Producer val, Integral offset, Integral align)
+--     => addr
+--     -> val
+--     -> offset
+--     -> align
+--     -> GenFun ()
+-- store addr val offset align = do
+--     produce addr
+--     produce val
+--     case asValueType val of
+--         -- I32 -> appendExpr [I32Store $ MemArg (fromIntegral offset) (fromIntegral align)]
+--         -- I64 -> appendExpr [I64Store $ MemArg (fromIntegral offset) (fromIntegral align)]
+--         F32 -> appendExpr [F32Store $ MemArg (fromIntegral offset) (fromIntegral align)]
+--         F64 -> appendExpr [F64Store $ MemArg (fromIntegral offset) (fromIntegral align)]
+--         Handle -> error "store not implemented for Handles"
 
-store8 :: (Producer addr, OutType addr ~ Proxy I32, Producer val, IsInt (OutType val) ~ True, Integral offset, Integral align)
-    => addr
-    -> val
-    -> offset
-    -> align
-    -> GenFun ()
-store8 addr val offset align = do
-    produce addr
-    produce val
-    case asValueType val of
-        I32 -> appendExpr [I32Store8 $ MemArg (fromIntegral offset) (fromIntegral align)]
-        I64 -> appendExpr [I64Store8 $ MemArg (fromIntegral offset) (fromIntegral align)]
-        _ -> error "Impossible by type constraint"
+-- store8 :: (Producer addr, OutType addr ~ Proxy I32, Producer val, IsInt (OutType val) ~ True, Integral offset, Integral align)
+--     => addr
+--     -> val
+--     -> offset
+--     -> align
+--     -> GenFun ()
+-- store8 addr val offset align = do
+--     produce addr
+--     produce val
+--     case asValueType val of
+--         I32 -> appendExpr [I32Store8 $ MemArg (fromIntegral offset) (fromIntegral align)]
+--         I64 -> appendExpr [I64Store8 $ MemArg (fromIntegral offset) (fromIntegral align)]
+--         _ -> error "Impossible by type constraint"
 
-store16 :: (Producer addr, OutType addr ~ Proxy I32, Producer val, IsInt (OutType val) ~ True, Integral offset, Integral align)
-    => addr
-    -> val
-    -> offset
-    -> align
-    -> GenFun ()
-store16 addr val offset align = do
-    produce addr
-    produce val
-    case asValueType val of
-        I32 -> appendExpr [I32Store16 $ MemArg (fromIntegral offset) (fromIntegral align)]
-        I64 -> appendExpr [I64Store16 $ MemArg (fromIntegral offset) (fromIntegral align)]
-        _ -> error "Impossible by type constraint"
+-- store16 :: (Producer addr, OutType addr ~ Proxy I32, Producer val, IsInt (OutType val) ~ True, Integral offset, Integral align)
+--     => addr
+--     -> val
+--     -> offset
+--     -> align
+--     -> GenFun ()
+-- store16 addr val offset align = do
+--     produce addr
+--     produce val
+--     case asValueType val of
+--         I32 -> appendExpr [I32Store16 $ MemArg (fromIntegral offset) (fromIntegral align)]
+--         I64 -> appendExpr [I64Store16 $ MemArg (fromIntegral offset) (fromIntegral align)]
+--         _ -> error "Impossible by type constraint"
 
-store32 :: (Producer addr, OutType addr ~ Proxy I32, Producer val, OutType val ~ Proxy I64, Integral offset, Integral align)
-    => addr
-    -> val
-    -> offset
-    -> align
-    -> GenFun ()
-store32 addr val offset align = do
-    produce addr
-    produce val
-    appendExpr [I64Store32 $ MemArg (fromIntegral offset) (fromIntegral align)]
+-- store32 :: (Producer addr, OutType addr ~ Proxy I32, Producer val, OutType val ~ Proxy I64, Integral offset, Integral align)
+--     => addr
+--     -> val
+--     -> offset
+--     -> align
+--     -> GenFun ()
+-- store32 addr val offset align = do
+--     produce addr
+--     produce val
+--     appendExpr [I64Store32 $ MemArg (fromIntegral offset) (fromIntegral align)]
 
 memorySize :: GenFun (Proxy I32)
 memorySize = appendExpr [CurrentMemory] >> return Proxy

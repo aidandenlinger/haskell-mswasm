@@ -259,75 +259,37 @@ getInstrType (SetGlobal global) = do
   t <- maybeToEither GlobalIndexOutOfRange $ asType <$> globals !? global
   shouldBeMut $ globals !! fromIntegral global
   return $ t ==> empty
-getInstrType (I32Load memarg) = do
-  checkMemoryInstr 4 memarg
-  return $ I32 ==> I32
-getInstrType (I64Load memarg) = do
-  checkMemoryInstr 8 memarg
-  return $ I32 ==> I64
+getInstrType (I32SegmentLoad ) = return $ Handle ==> I32
+getInstrType (I64SegmentLoad ) = return $ Handle ==> I64
 getInstrType (F32Load memarg) = do
   checkMemoryInstr 4 memarg
   return $ I32 ==> F32
 getInstrType (F64Load memarg) = do
   checkMemoryInstr 8 memarg
   return $ I32 ==> F64
-getInstrType (I32Load8S memarg) = do
-  checkMemoryInstr 1 memarg
-  return $ I32 ==> I32
-getInstrType (I32Load8U memarg) = do
-  checkMemoryInstr 1 memarg
-  return $ I32 ==> I32
-getInstrType (I32Load16S memarg) = do
-  checkMemoryInstr 2 memarg
-  return $ I32 ==> I32
-getInstrType (I32Load16U memarg) = do
-  checkMemoryInstr 2 memarg
-  return $ I32 ==> I32
-getInstrType (I64Load8S memarg) = do
-  checkMemoryInstr 1 memarg
-  return $ I32 ==> I64
-getInstrType (I64Load8U memarg) = do
-  checkMemoryInstr 1 memarg
-  return $ I32 ==> I64
-getInstrType (I64Load16S memarg) = do
-  checkMemoryInstr 2 memarg
-  return $ I32 ==> I64
-getInstrType (I64Load16U memarg) = do
-  checkMemoryInstr 2 memarg
-  return $ I32 ==> I64
-getInstrType (I64Load32S memarg) = do
-  checkMemoryInstr 4 memarg
-  return $ I32 ==> I64
-getInstrType (I64Load32U memarg) = do
-  checkMemoryInstr 8 memarg
-  return $ I32 ==> I64
-getInstrType (I32Store memarg) = do
-  checkMemoryInstr 4 memarg
-  return $ [I32, I32] ==> empty
-getInstrType (I64Store memarg) = do
-  checkMemoryInstr 8 memarg
-  return $ [I32, I64] ==> empty
+getInstrType (I32SegmentLoad8S ) = return $ Handle ==> I32
+getInstrType (I32SegmentLoad8U ) = return $ Handle ==> I32
+getInstrType (I32SegmentLoad16S ) = return $ Handle ==> I32
+getInstrType (I32SegmentLoad16U ) = return $ Handle ==> I32
+getInstrType (I64SegmentLoad8S ) = return $ Handle ==> I64
+getInstrType (I64SegmentLoad8U ) = return $ Handle ==> I64
+getInstrType (I64SegmentLoad16S ) = return $ Handle ==> I64
+getInstrType (I64SegmentLoad16U ) = return $ Handle ==> I64
+getInstrType (I64SegmentLoad32S ) = return $ Handle ==> I64
+getInstrType (I64SegmentLoad32U ) = return $ Handle ==> I64
+getInstrType (I32SegmentStore ) = return $ [Handle, I32] ==> empty
+getInstrType (I64SegmentStore ) = return $ [Handle, I64] ==> empty
 getInstrType (F32Store memarg) = do
   checkMemoryInstr 4 memarg
   return $ [I32, F32] ==> empty
 getInstrType (F64Store memarg) = do
   checkMemoryInstr 8 memarg
   return $ [I32, F64] ==> empty
-getInstrType (I32Store8 memarg) = do
-  checkMemoryInstr 1 memarg
-  return $ [I32, I32] ==> empty
-getInstrType (I32Store16 memarg) = do
-  checkMemoryInstr 2 memarg
-  return $ [I32, I32] ==> empty
-getInstrType (I64Store8 memarg) = do
-  checkMemoryInstr 1 memarg
-  return $ [I32, I64] ==> empty
-getInstrType (I64Store16 memarg) = do
-  checkMemoryInstr 2 memarg
-  return $ [I32, I64] ==> empty
-getInstrType (I64Store32 memarg) = do
-  checkMemoryInstr 4 memarg
-  return $ [I32, I64] ==> empty
+getInstrType (I32SegmentStore8 ) = return $ [Handle, I32] ==> empty
+getInstrType (I32SegmentStore16 ) = return $ [Handle, I32] ==> empty
+getInstrType (I64SegmentStore8 ) = return $ [Handle, I64] ==> empty
+getInstrType (I64SegmentStore16 ) = return $ [Handle, I64] ==> empty
+getInstrType (I64SegmentStore32 ) = return $ [Handle, I64] ==> empty
 getInstrType CurrentMemory = do
   Ctx {mems} <- ask
   if length mems < 1 then throwError MemoryIndexOutOfRange else return $ empty ==> I32
@@ -335,10 +297,10 @@ getInstrType GrowMemory = do
   Ctx {mems} <- ask
   if length mems < 1 then throwError MemoryIndexOutOfRange else return $ I32 ==> I32
 -- Begin MSWasm instr
-getInstrType I32SegmentLoad = return $ Handle ==> I32
-getInstrType I64SegmentLoad = return $ Handle ==> I64
-getInstrType I32SegmentStore = return $ [Handle, I32] ==> empty
-getInstrType I64SegmentStore = return $ [Handle, I64] ==> empty
+-- getInstrType I32SegmentLoad = return $ Handle ==> I32
+-- getInstrType I64SegmentLoad = return $ Handle ==> I64
+-- getInstrType I32SegmentStore = return $ [Handle, I32] ==> empty
+-- getInstrType I64SegmentStore = return $ [Handle, I64] ==> empty
 getInstrType NewSegment = return $ I32 ==> Handle
 getInstrType FreeSegment = return $ Handle ==> empty
 getInstrType SegmentSlice = return $ [Handle, I32, I32] ==> Handle
