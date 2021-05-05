@@ -57,13 +57,16 @@ compile input =
   toBinary ("./tests/toBinaryTest/" ++ input ++ ".wat") ("./tests/graalBin/" ++ input ++ ".wasm")
 
 -- | Takes in a filepath to a binary and outputs the Module representation.
-toModule :: String -> IO ()
-toModule input = do
+showFullModule :: String -> IO ()
+showFullModule input = do
   binary <- LBS.readFile input
   case Wasm.decodeLazy binary of
     Right mod    -> print mod
     Left  reason -> putStrLn reason
 
+showModule :: String -> IO ()
+showModule s = Wasm.showModule s >>= putStrLn
+
 -- | Hardcoded toModule to examine the binary bin.wasm in toBinaryTest
 toModuleHC :: IO ()
-toModuleHC = toModule "./tests/toBinaryTest/bin.wasm"
+toModuleHC = showFullModule "./tests/toBinaryTest/bin.wasm"
