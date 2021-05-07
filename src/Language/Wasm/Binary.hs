@@ -357,8 +357,8 @@ instance Serialize (Instruction Natural) where
   put (I64SegmentLoad32U) = putWord8 0x35
   put (I32SegmentStore) = putWord8 0x36
   put (I64SegmentStore) = putWord8 0x37
-  put (F32SegmentStore) = putWord8 0x38 >>
-  put (F64SegmentStore) = putWord8 0x39 >>
+  put (F32SegmentStore) = putWord8 0x38
+  put (F64SegmentStore) = putWord8 0x39
   put (I32SegmentStore8) = putWord8 0x3A 
   put (I32SegmentStore16) = putWord8 0x3B
   put (I64SegmentStore8) = putWord8 0x3C 

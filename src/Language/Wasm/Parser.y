@@ -136,8 +136,8 @@ import Language.Wasm.Lexer (
 'set_global'          { Lexeme _ (TKeyword "set_global") }
 'i32.segment_load'     { Lexeme _ (TKeyword "i32.segment_load") }
 'i64.segment_load'     { Lexeme _ (TKeyword "i64.segment_load") }
-'f32.load'            { Lexeme _ (TKeyword "f32.load") }
-'f64.load'            { Lexeme _ (TKeyword "f64.load") }
+'f32.segment_load'     { Lexeme _ (TKeyword "f32.segment_load") }
+'f64.segment_load'     { Lexeme _ (TKeyword "f64.segment_load") }
 'i32.segment_load8_s'  { Lexeme _ (TKeyword "i32.segment_load8_s") }
 'i32.segment_load8_u'  { Lexeme _ (TKeyword "i32.segment_load8_u") }
 'i32.segment_load16_s' { Lexeme _ (TKeyword "i32.segment_load16_s") }
@@ -150,8 +150,8 @@ import Language.Wasm.Lexer (
 'i64.segment_load32_u' { Lexeme _ (TKeyword "i64.segment_load32_u") }
 'i32.segment_store'    { Lexeme _ (TKeyword "i32.segment_store") }
 'i64.segment_store'    { Lexeme _ (TKeyword "i64.segment_store") }
-'f32.store'           { Lexeme _ (TKeyword "f32.store") }
-'f64.store'           { Lexeme _ (TKeyword "f64.store") }
+'f32.segment_store'    { Lexeme _ (TKeyword "f32.segment_store") }
+'f64.segment_store'    { Lexeme _ (TKeyword "f64.segment_store") }
 'i32.segment_store8'   { Lexeme _ (TKeyword "i32.segment_store8") }
 'i32.segment_store16'  { Lexeme _ (TKeyword "i32.segment_store16") }
 'i64.segment_store8'   { Lexeme _ (TKeyword "i64.segment_store8") }
@@ -305,11 +305,7 @@ import Language.Wasm.Lexer (
 'offset'              { Lexeme _ (TKeyword "offset") }
 'start'               { Lexeme _ (TKeyword "start") }
 'module'              { Lexeme _ (TKeyword "module") }
--- ms-wasm extension
--- 'i32.segment_load'    { Lexeme _ (TKeyword "i32.segment_load") }
--- 'i64.segment_load'    { Lexeme _ (TKeyword "i64.segment_load") }
--- 'i32.segment_store'   { Lexeme _ (TKeyword "i32.segment_store") }
--- 'i64.segment_store'   { Lexeme _ (TKeyword "i64.segment_store") }
+-- ms-wasm extension\
 'new_segment'         { Lexeme _ (TKeyword "new_segment") }
 'free_segment'        { Lexeme _ (TKeyword "free_segment") }
 'segment_slice'       { Lexeme _ (TKeyword "segment_slice") }
@@ -585,10 +581,6 @@ plaininstr :: { PlainInstr }
     | 'f32.reinterpret/i32'          { FReinterpretI BS32 }
     | 'f64.reinterpret/i64'          { FReinterpretI BS64 }
     -- MSWasm instructions
-    -- | 'i32.segment_load'             { I32SegmentLoad }
-    -- | 'i64.segment_load'             { I64SegmentLoad }
-    -- | 'i32.segment_store'            { I32SegmentStore }
-    -- | 'i64.segment_store'            { I64SegmentStore }
     | 'new_segment'                  { NewSegment }
     | 'free_segment'                 { FreeSegment }
     | 'segment_slice'                { SegmentSlice }
