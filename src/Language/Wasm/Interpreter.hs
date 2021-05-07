@@ -158,6 +158,38 @@ isInvalidHandle :: Value -> Bool
 isInvalidHandle (VHandle x y z b) = (x + y > z) || b
 isInvalidHandle _ = False
 
+evalSegmentLoad :: EvalCtx -> IO EvalResult
+evalSegmentLoad ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem}
+  = if isInvalidHandle (VHandle w x y z)
+      then return Trap
+      else
+        let result = loadFromSegment segmem (VHandle w x y z)
+         in case result of
+              Just val -> return $ Done ctx {stack = val : rest}
+              Nothing -> return Trap
+evalSegmentLoad _
+  = return Trap
+
+evalSegmentStore :: EvalCtx -> IO EvalResult
+evalSegmentStore ctx@EvalCtx {stack = (VI32 v : VHandle w x y z : rest), segmem}
+  = if isInvalidHandle (VHandle w x y z)
+      then return Trap
+      else
+        let result = storeToSegment segmem (VHandle w x y z) (VI32 v)
+         in case result of
+              Just mem -> return $ Done ctx {stack = rest, segmem = mem}
+              Nothing -> return Trap
+evalSegmentStore ctx@EvalCtx {stack = (VI64 v : VHandle w x y z : rest), segmem}
+  = if isInvalidHandle (VHandle w x y z)
+      then return Trap
+      else
+        let result = storeToSegment segmem (VHandle w x y z) (VI64 v)
+         in case result of
+              Just mem -> return $ Done ctx {stack = rest, segmem = mem}
+              Nothing -> return Trap
+evalSegmentStore _
+  = return Trap
+
 -- end MS-Wasm interpreter functions
 
 asInt32 :: Word32 -> Int32
@@ -819,72 +851,52 @@ eval budget store FunctionInstance {funcType, moduleInstance, code = Function {l
         GIConst _ v -> error "Attempt of mutation of constant global"
         GIMut _ ref -> writeIORef ref v
       return $ Done ctx {stack = rest}
-    step ctx (I32Load MemArg {offset}) =
-      makeLoadInstr ctx offset 4 $ (\rest val -> Done ctx {stack = VI32 val : rest})
-    step ctx (I64Load MemArg {offset}) =
-      makeLoadInstr ctx offset 8 $ (\rest val -> Done ctx {stack = VI64 val : rest})
+    step ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem} I32SegmentLoad =
+      evalSegmentLoad ctx
+    step ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem} I64SegmentLoad =
+      evalSegmentLoad ctx
     step ctx (F32Load MemArg {offset}) =
       makeLoadInstr ctx offset 4 $ (\rest val -> Done ctx {stack = VF32 (wordToFloat val) : rest})
     step ctx (F64Load MemArg {offset}) =
       makeLoadInstr ctx offset 8 $ (\rest val -> Done ctx {stack = VF64 (wordToDouble val) : rest})
-    step ctx (I32Load8U MemArg {offset}) =
-      makeLoadInstr ctx offset 1 $ (\rest val -> Done ctx {stack = VI32 val : rest})
-    step ctx (I32Load8S MemArg {offset}) =
-      makeLoadInstr ctx offset 1 $
-        ( \rest byte ->
-            let val = asWord32 $ if (byte :: Word8) >= 128 then -1 * fromIntegral (0xFF - byte + 1) else fromIntegral byte
-             in Done ctx {stack = VI32 val : rest}
-        )
-    step ctx (I32Load16U MemArg {offset}) = do
-      makeLoadInstr ctx offset 2 $ (\rest val -> Done ctx {stack = VI32 val : rest})
-    step ctx (I32Load16S MemArg {offset}) =
-      makeLoadInstr ctx offset 2 $
-        ( \rest val ->
-            let signed = asWord32 $ if (val :: Word16) >= 2 ^ 15 then -1 * fromIntegral (0xFFFF - val + 1) else fromIntegral val
-             in Done ctx {stack = VI32 signed : rest}
-        )
-    step ctx (I64Load8U MemArg {offset}) =
-      makeLoadInstr ctx offset 1 $ (\rest val -> Done ctx {stack = VI64 val : rest})
-    step ctx (I64Load8S MemArg {offset}) =
-      makeLoadInstr ctx offset 1 $
-        ( \rest byte ->
-            let val = asWord64 $ if (byte :: Word8) >= 128 then -1 * fromIntegral (0xFF - byte + 1) else fromIntegral byte
-             in Done ctx {stack = VI64 val : rest}
-        )
-    step ctx (I64Load16U MemArg {offset}) =
-      makeLoadInstr ctx offset 2 $ (\rest val -> Done ctx {stack = VI64 val : rest})
-    step ctx (I64Load16S MemArg {offset}) =
-      makeLoadInstr ctx offset 2 $
-        ( \rest val ->
-            let signed = asWord64 $ if (val :: Word16) >= 2 ^ 15 then -1 * fromIntegral (0xFFFF - val + 1) else fromIntegral val
-             in Done ctx {stack = VI64 signed : rest}
-        )
-    step ctx (I64Load32U MemArg {offset}) =
-      makeLoadInstr ctx offset 4 $ (\rest val -> Done ctx {stack = VI64 val : rest})
-    step ctx (I64Load32S MemArg {offset}) =
-      makeLoadInstr ctx offset 4 $
-        ( \rest val ->
-            let signed = asWord64 $ fromIntegral $ asInt32 val
-             in Done ctx {stack = VI64 signed : rest}
-        )
-    step ctx@EvalCtx {stack = (VI32 v : rest)} (I32Store MemArg {offset}) =
-      makeStoreInstr ctx {stack = rest} offset 4 v
-    step ctx@EvalCtx {stack = (VI64 v : rest)} (I64Store MemArg {offset}) =
-      makeStoreInstr ctx {stack = rest} offset 8 v
+    step ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem} I32SegmentLoad8U =
+      evalSegmentLoad ctx
+    step ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem} I32SegmentLoad8S =
+      evalSegmentLoad ctx
+    step ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem} I32SegmentLoad16U =
+      evalSegmentLoad ctx
+    step ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem} I32SegmentLoad16S =
+      evalSegmentLoad ctx
+    step ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem} I64SegmentLoad8U =
+      evalSegmentLoad ctx
+    step ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem} I64SegmentLoad8S =
+      evalSegmentLoad ctx
+    step ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem} I64SegmentLoad16U =
+      evalSegmentLoad ctx
+    step ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem} I64SegmentLoad16S =
+      evalSegmentLoad ctx
+    step ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem} I64SegmentLoad32U =
+      evalSegmentLoad ctx
+    step ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem} I64SegmentLoad32S =
+      evalSegmentLoad ctx
+    step ctx@EvalCtx {stack = (VI32 v : VHandle w x y z : rest), segmem} I32SegmentStore =
+      evalSegmentStore ctx
+    step ctx@EvalCtx {stack = (VI32 v : VHandle w x y z : rest), segmem} I64SegmentStore =
+      evalSegmentStore ctx
     step ctx@EvalCtx {stack = (VF32 f : rest)} (F32Store MemArg {offset}) =
       makeStoreInstr ctx {stack = rest} offset 4 $ floatToWord f
     step ctx@EvalCtx {stack = (VF64 f : rest)} (F64Store MemArg {offset}) =
       makeStoreInstr ctx {stack = rest} offset 8 $ doubleToWord f
-    step ctx@EvalCtx {stack = (VI32 v : rest)} (I32Store8 MemArg {offset}) =
-      makeStoreInstr ctx {stack = rest} offset 1 v
-    step ctx@EvalCtx {stack = (VI32 v : rest)} (I32Store16 MemArg {offset}) =
-      makeStoreInstr ctx {stack = rest} offset 2 v
-    step ctx@EvalCtx {stack = (VI64 v : rest)} (I64Store8 MemArg {offset}) =
-      makeStoreInstr ctx {stack = rest} offset 1 v
-    step ctx@EvalCtx {stack = (VI64 v : rest)} (I64Store16 MemArg {offset}) =
-      makeStoreInstr ctx {stack = rest} offset 2 v
-    step ctx@EvalCtx {stack = (VI64 v : rest)} (I64Store32 MemArg {offset}) =
-      makeStoreInstr ctx {stack = rest} offset 4 v
+    step ctx@EvalCtx {stack = (VI32 v : VHandle w x y z : rest), segmem} I32SegmentStore8 =
+      evalSegmentStore ctx
+    step ctx@EvalCtx {stack = (VI32 v : VHandle w x y z : rest), segmem} I32SegmentStore16 =
+      evalSegmentStore ctx
+    step ctx@EvalCtx {stack = (VI32 v : VHandle w x y z : rest), segmem} I64SegmentStore8 =
+      evalSegmentStore ctx 
+    step ctx@EvalCtx {stack = (VI32 v : VHandle w x y z : rest), segmem} I64SegmentStore16 =
+      evalSegmentStore ctx 
+    step ctx@EvalCtx {stack = (VI32 v : VHandle w x y z : rest), segmem} I64SegmentStore32 =
+      evalSegmentStore ctx 
     step ctx@EvalCtx {stack = st} CurrentMemory = do
       let MemoryInstance {memory = memoryRef} = memInstances store ! (memaddrs moduleInstance ! 0)
       memory <- readIORef memoryRef
@@ -1189,38 +1201,14 @@ eval budget store FunctionInstance {funcType, moduleInstance, code = Function {l
     -- MS-Wasm step instructions
     -- TODO: loadFromSegment doesn't specify what's IN the handle, so same
     -- code for I32SegmentLoad and I64SegmentLoad
-    step ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem} I32SegmentLoad =
-      if isInvalidHandle (VHandle w x y z)
-        then return Trap
-        else
-          let result = loadFromSegment segmem (VHandle w x y z)
-           in case result of
-                Just val -> return $ Done ctx {stack = val : rest}
-                Nothing -> return Trap
-    step ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem} I64SegmentLoad =
-      if isInvalidHandle (VHandle w x y z)
-        then return Trap
-        else
-          let result = loadFromSegment segmem (VHandle w x y z)
-           in case result of
-                Just val -> return $ Done ctx {stack = val : rest}
-                Nothing -> return Trap
-    step ctx@EvalCtx {stack = (VI32 v : VHandle w x y z : rest), segmem} I32SegmentStore =
-      if isInvalidHandle (VHandle w x y z)
-        then return Trap
-        else
-          let result = storeToSegment segmem (VHandle w x y z) (VI32 v)
-           in case result of
-                Just mem -> return $ Done ctx {stack = rest, segmem = mem}
-                Nothing -> return Trap
-    step ctx@EvalCtx {stack = (VI64 v : VHandle w x y z : rest), segmem} I64SegmentStore =
-      if isInvalidHandle (VHandle w x y z)
-        then return Trap
-        else
-          let result = storeToSegment segmem (VHandle w x y z) (VI64 v)
-           in case result of
-                Just mem -> return $ Done ctx {stack = rest, segmem = mem}
-                Nothing -> return Trap
+    -- step ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem} I32SegmentLoad =
+    --   evalSegmentLoad ctx stack segmem
+    -- step ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem} I64SegmentLoad =
+    --   evalSgmentLoad sctx stack segmem
+    -- step ctx@EvalCtx {stack = (VI32 v : VHandle w x y z : rest), segmem} I32SegmentStore =
+    --   evalSegmentStore ctx stack segmem
+    -- step ctx@EvalCtx {stack = (VI64 v : VHandle w x y z : rest), segmem} I64SegmentStore =
+    --   evalSegmentStore ctx stack segmem
     step ctx@EvalCtx {stack = (VI32 v : rest), segmem} NewSegment =
       let result =
             VHandle
@@ -1289,8 +1277,14 @@ eval budget store FunctionInstance {funcType, moduleInstance, code = Function {l
            in case newseg of
                 Just mem -> return $ Done ctx {stack = result : rest, segmem = mem}
                 Nothing -> return Trap
-    step ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem} HandleOffset =
+    step ctx@EvalCtx {stack = (VHandle w x y z : VI32 i : rest), segmem} HandleGetOffset =
       return $ Done ctx {stack = VI32 x : rest}
+    step ctx@EvalCtx {stack = (VI32 i : VHandle w x y z : rest), segmem} HandleSetOffset =
+      let result = VHandle w i y z
+       in let newseg = newSegment segmem result (VI32 (asWord32 0))
+           in case newseg of
+                Just mem -> return $ Done ctx {stack = result : rest, segmem = mem}
+                Nothing -> return Trap
     -- End MS-Wasm instructions
     step EvalCtx {stack} instr = error $ "Error during evaluation of instruction: " ++ show instr ++ ". Stack " ++ show stack
 eval _ _ HostInstance {funcType, hostCode} args = Just <$> hostCode args

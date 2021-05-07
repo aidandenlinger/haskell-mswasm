@@ -1,3 +1,5 @@
+{-# LANGUAGE DuplicateRecordFields #-}
+
 module Language.Wasm (
     Module,
     ValidModule,
@@ -9,6 +11,7 @@ module Language.Wasm (
     encodeLazy,
     decode,
     decodeLazy,
+    showModule,
     Script,
     runScript
 ) where
@@ -22,6 +25,7 @@ import Language.Wasm.Lexer as Lexer
 import Language.Wasm.Parser as Parser
 import Language.Wasm.Validate as Valid
 import Language.Wasm.Binary as Binary
+import Numeric.Natural (Natural)
 
 -- | Parse WebAssembly text representation to `Module`
 parse :: LBS.ByteString -> Either String Module
@@ -46,3 +50,32 @@ decode = decodeModule
 -- | Decode `Module` from binary representation lazily
 decodeLazy :: LBS.ByteString -> Either String Module
 decodeLazy = decodeModuleLazy
+
+showModule :: String -> IO String
+showModule input = do
+  binary <- LBS.readFile input
+  case decodeLazy binary of
+    Right mod -> return $ prettyPrint mod
+    Left reason -> return reason
+  where
+    prettyPrint :: Module -> String
+    prettyPrint Module { functions = t}  = concatMap ((++ "\n\nnew function:\n\n") . functionPrint) t
+
+    functionPrint :: Struct.Function -> String
+    functionPrint Struct.Function {Struct.body = b} = unlines (map (instrPrint 0) b)
+
+    instrPrint :: Int -> Struct.Instruction Natural -> String
+    instrPrint i (Block {Struct.body = b})
+      = indent i ++ "Block:\n" ++ unlines (map (instrPrint (i+1)) b)
+    instrPrint i (Loop {Struct.body = b})
+      = indent i ++ "Loop:\n" ++ unlines (map (instrPrint (i+1)) b)
+    instrPrint i (If {Struct.true = t, Struct.false = f})
+      = indent i ++ "If True:\n"  ++ unlines (map (instrPrint (i+1)) t) ++ 
+        indent i ++ "If False:\n" ++ unlines (map (instrPrint (i+1)) f)
+    instrPrint i e
+      = indent i ++ show e
+    
+    indent :: Int -> String
+    indent 0 = ""
+    indent n = "| " ++ (indent $ n - 1)
+    

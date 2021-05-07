@@ -341,29 +341,29 @@ instance Serialize (Instruction Natural) where
   put (GetGlobal idx) = putWord8 0x23 >> putULEB128 idx
   put (SetGlobal idx) = putWord8 0x24 >> putULEB128 idx
   -- Memory instructions
-  put (I32Load memArg) = putWord8 0x28 >> put memArg
-  put (I64Load memArg) = putWord8 0x29 >> put memArg
+  put (I32SegmentLoad ) = putWord8 0x28
+  put (I64SegmentLoad ) = putWord8 0x29
   put (F32Load memArg) = putWord8 0x2A >> put memArg
   put (F64Load memArg) = putWord8 0x2B >> put memArg
-  put (I32Load8S memArg) = putWord8 0x2C >> put memArg
-  put (I32Load8U memArg) = putWord8 0x2D >> put memArg
-  put (I32Load16S memArg) = putWord8 0x2E >> put memArg
-  put (I32Load16U memArg) = putWord8 0x2F >> put memArg
-  put (I64Load8S memArg) = putWord8 0x30 >> put memArg
-  put (I64Load8U memArg) = putWord8 0x31 >> put memArg
-  put (I64Load16S memArg) = putWord8 0x32 >> put memArg
-  put (I64Load16U memArg) = putWord8 0x33 >> put memArg
-  put (I64Load32S memArg) = putWord8 0x34 >> put memArg
-  put (I64Load32U memArg) = putWord8 0x35 >> put memArg
-  put (I32Store memArg) = putWord8 0x36 >> put memArg
-  put (I64Store memArg) = putWord8 0x37 >> put memArg
+  put (I32SegmentLoad8S ) = putWord8 0x2C 
+  put (I32SegmentLoad8U ) = putWord8 0x2D 
+  put (I32SegmentLoad16S ) = putWord8 0x2E
+  put (I32SegmentLoad16U ) = putWord8 0x2F
+  put (I64SegmentLoad8S ) = putWord8 0x30 
+  put (I64SegmentLoad8U ) = putWord8 0x31 
+  put (I64SegmentLoad16S ) = putWord8 0x32
+  put (I64SegmentLoad16U ) = putWord8 0x33
+  put (I64SegmentLoad32S ) = putWord8 0x34
+  put (I64SegmentLoad32U ) = putWord8 0x35
+  put (I32SegmentStore ) = putWord8 0x36
+  put (I64SegmentStore ) = putWord8 0x37
   put (F32Store memArg) = putWord8 0x38 >> put memArg
   put (F64Store memArg) = putWord8 0x39 >> put memArg
-  put (I32Store8 memArg) = putWord8 0x3A >> put memArg
-  put (I32Store16 memArg) = putWord8 0x3B >> put memArg
-  put (I64Store8 memArg) = putWord8 0x3C >> put memArg
-  put (I64Store16 memArg) = putWord8 0x3D >> put memArg
-  put (I64Store32 memArg) = putWord8 0x3E >> put memArg
+  put (I32SegmentStore8 ) = putWord8 0x3A 
+  put (I32SegmentStore16 ) = putWord8 0x3B
+  put (I64SegmentStore8 ) = putWord8 0x3C 
+  put (I64SegmentStore16 ) = putWord8 0x3D
+  put (I64SegmentStore32 ) = putWord8 0x3E
   put CurrentMemory = putWord8 0x3F >> putWord8 0x00
   put GrowMemory = putWord8 0x40 >> putWord8 0x00
   -- Numeric instructions
@@ -495,10 +495,10 @@ instance Serialize (Instruction Natural) where
   put (FReinterpretI BS32) = putWord8 0xBE
   put (FReinterpretI BS64) = putWord8 0xBF
   -- MSWasm instructions
-  put I32SegmentLoad = putWord8 0xF0
-  put I64SegmentLoad = putWord8 0xF1
-  put I32SegmentStore = putWord8 0xF2
-  put I64SegmentStore = putWord8 0xF3
+  -- put I32SegmentLoad = putWord8 0xF0
+  -- put I64SegmentLoad = putWord8 0xF1
+  -- put I32SegmentStore = putWord8 0xF2
+  -- put I64SegmentStore = putWord8 0xF3
   put NewSegment = putWord8 0xF4
   put FreeSegment = putWord8 0xF5
   put SegmentSlice = putWord8 0xF6
@@ -506,7 +506,8 @@ instance Serialize (Instruction Natural) where
   put HandleSegmentStore = putWord8 0xF8
   put HandleAdd = putWord8 0xF9
   put HandleSub = putWord8 0xFA
-  put HandleOffset = putWord8 0xFB
+  put HandleGetOffset = putWord8 0xFB
+  put HandleSetOffset = putWord8 0xFC
   put _ = error "Undefined instruction or type"
 
   get = do
@@ -540,36 +541,36 @@ instance Serialize (Instruction Natural) where
       0x23 -> GetGlobal <$> getULEB128 32
       0x24 -> SetGlobal <$> getULEB128 32
       -- Memory instructions
-      0x28 -> I32Load <$> get
-      0x29 -> I64Load <$> get
+      0x28 -> return $ I32SegmentLoad
+      0x29 -> return $ I64SegmentLoad
       0x2A -> F32Load <$> get
       0x2B -> F64Load <$> get
-      0x2C -> I32Load8S <$> get
-      0x2D -> I32Load8U <$> get
-      0x2E -> I32Load16S <$> get
-      0x2F -> I32Load16U <$> get
-      0x30 -> I64Load8S <$> get
-      0x31 -> I64Load8U <$> get
-      0x32 -> I64Load16S <$> get
-      0x33 -> I64Load16U <$> get
-      0x34 -> I64Load32S <$> get
-      0x35 -> I64Load32U <$> get
-      0x36 -> I32Store <$> get
-      0x37 -> I64Store <$> get
+      0x2C -> return $ I32SegmentLoad8S 
+      0x2D -> return $ I32SegmentLoad8U 
+      0x2E -> return $ I32SegmentLoad16S
+      0x2F -> return $ I32SegmentLoad16U
+      0x30 -> return $ I64SegmentLoad8S 
+      0x31 -> return $ I64SegmentLoad8U 
+      0x32 -> return $ I64SegmentLoad16S
+      0x33 -> return $ I64SegmentLoad16U
+      0x34 -> return $ I64SegmentLoad32S
+      0x35 -> return $ I64SegmentLoad32U
+      0x36 -> return $ I32SegmentStore
+      0x37 -> return $ I64SegmentStore
       0x38 -> F32Store <$> get
       0x39 -> F64Store <$> get
-      0x3A -> I32Store8 <$> get
-      0x3B -> I32Store16 <$> get
-      0x3C -> I64Store8 <$> get
-      0x3D -> I64Store16 <$> get
-      0x3E -> I64Store32 <$> get
+      0x3A -> return $ I32SegmentStore8 
+      0x3B -> return $ I32SegmentStore16
+      0x3C -> return $ I64SegmentStore8 
+      0x3D -> return $ I64SegmentStore16
+      0x3E -> return $ I64SegmentStore32
       0x3F -> byteGuard 0x00 >> (return $ CurrentMemory)
       0x40 -> byteGuard 0x00 >> (return $ GrowMemory)
       -- MSWasm instructions
-      0xF0 -> return $ I32SegmentLoad
-      0xF1 -> return $ I64SegmentLoad
-      0xF2 -> return $ I32SegmentStore
-      0xF3 -> return $ I64SegmentStore
+      -- 0xF0 -> return $ I32SegmentLoad
+      -- 0xF1 -> return $ I64SegmentLoad
+      -- 0xF2 -> return $ I32SegmentStore
+      -- 0xF3 -> return $ I64SegmentStore
       0xF4 -> return $ NewSegment
       0xF5 -> return $ FreeSegment
       0xF6 -> return $ SegmentSlice
@@ -577,7 +578,8 @@ instance Serialize (Instruction Natural) where
       0xF8 -> return $ HandleSegmentStore
       0xF9 -> return $ HandleAdd
       0xFA -> return $ HandleSub
-      0xFB -> return $ HandleOffset
+      0xFB -> return $ HandleGetOffset
+      0xFC -> return $ HandleSetOffset
       -- Numeric instructions
       0x41 -> I32Const <$> getSLEB128 32
       0x42 -> I64Const <$> getSLEB128 64
