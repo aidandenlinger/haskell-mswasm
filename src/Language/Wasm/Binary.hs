@@ -341,29 +341,29 @@ instance Serialize (Instruction Natural) where
   put (GetGlobal idx) = putWord8 0x23 >> putULEB128 idx
   put (SetGlobal idx) = putWord8 0x24 >> putULEB128 idx
   -- Memory instructions
-  put (I32SegmentLoad ) = putWord8 0x28
-  put (I64SegmentLoad ) = putWord8 0x29
-  put (F32Load memArg) = putWord8 0x2A >> put memArg
-  put (F64Load memArg) = putWord8 0x2B >> put memArg
-  put (I32SegmentLoad8S ) = putWord8 0x2C 
-  put (I32SegmentLoad8U ) = putWord8 0x2D 
-  put (I32SegmentLoad16S ) = putWord8 0x2E
-  put (I32SegmentLoad16U ) = putWord8 0x2F
-  put (I64SegmentLoad8S ) = putWord8 0x30 
-  put (I64SegmentLoad8U ) = putWord8 0x31 
-  put (I64SegmentLoad16S ) = putWord8 0x32
-  put (I64SegmentLoad16U ) = putWord8 0x33
-  put (I64SegmentLoad32S ) = putWord8 0x34
-  put (I64SegmentLoad32U ) = putWord8 0x35
-  put (I32SegmentStore ) = putWord8 0x36
-  put (I64SegmentStore ) = putWord8 0x37
-  put (F32Store memArg) = putWord8 0x38 >> put memArg
-  put (F64Store memArg) = putWord8 0x39 >> put memArg
-  put (I32SegmentStore8 ) = putWord8 0x3A 
-  put (I32SegmentStore16 ) = putWord8 0x3B
-  put (I64SegmentStore8 ) = putWord8 0x3C 
-  put (I64SegmentStore16 ) = putWord8 0x3D
-  put (I64SegmentStore32 ) = putWord8 0x3E
+  put (I32SegmentLoad) = putWord8 0x28
+  put (I64SegmentLoad) = putWord8 0x29
+  put (F32SegmentLoad) = putWord8 0x2A
+  put (F64SegmentLoad) = putWord8 0x2B
+  put (I32SegmentLoad8S) = putWord8 0x2C 
+  put (I32SegmentLoad8U) = putWord8 0x2D 
+  put (I32SegmentLoad16S) = putWord8 0x2E
+  put (I32SegmentLoad16U) = putWord8 0x2F
+  put (I64SegmentLoad8S) = putWord8 0x30 
+  put (I64SegmentLoad8U) = putWord8 0x31 
+  put (I64SegmentLoad16S) = putWord8 0x32
+  put (I64SegmentLoad16U) = putWord8 0x33
+  put (I64SegmentLoad32S) = putWord8 0x34
+  put (I64SegmentLoad32U) = putWord8 0x35
+  put (I32SegmentStore) = putWord8 0x36
+  put (I64SegmentStore) = putWord8 0x37
+  put (F32SegmentStore) = putWord8 0x38 >>
+  put (F64SegmentStore) = putWord8 0x39 >>
+  put (I32SegmentStore8) = putWord8 0x3A 
+  put (I32SegmentStore16) = putWord8 0x3B
+  put (I64SegmentStore8) = putWord8 0x3C 
+  put (I64SegmentStore16) = putWord8 0x3D
+  put (I64SegmentStore32) = putWord8 0x3E
   put CurrentMemory = putWord8 0x3F >> putWord8 0x00
   put GrowMemory = putWord8 0x40 >> putWord8 0x00
   -- Numeric instructions
@@ -541,29 +541,29 @@ instance Serialize (Instruction Natural) where
       0x23 -> GetGlobal <$> getULEB128 32
       0x24 -> SetGlobal <$> getULEB128 32
       -- Memory instructions
-      0x28 -> return $ I32SegmentLoad
-      0x29 -> return $ I64SegmentLoad
-      0x2A -> F32Load <$> get
-      0x2B -> F64Load <$> get
-      0x2C -> return $ I32SegmentLoad8S 
-      0x2D -> return $ I32SegmentLoad8U 
-      0x2E -> return $ I32SegmentLoad16S
-      0x2F -> return $ I32SegmentLoad16U
-      0x30 -> return $ I64SegmentLoad8S 
-      0x31 -> return $ I64SegmentLoad8U 
-      0x32 -> return $ I64SegmentLoad16S
-      0x33 -> return $ I64SegmentLoad16U
-      0x34 -> return $ I64SegmentLoad32S
-      0x35 -> return $ I64SegmentLoad32U
-      0x36 -> return $ I32SegmentStore
-      0x37 -> return $ I64SegmentStore
-      0x38 -> F32Store <$> get
-      0x39 -> F64Store <$> get
-      0x3A -> return $ I32SegmentStore8 
-      0x3B -> return $ I32SegmentStore16
-      0x3C -> return $ I64SegmentStore8 
-      0x3D -> return $ I64SegmentStore16
-      0x3E -> return $ I64SegmentStore32
+      0x28 -> return I32SegmentLoad
+      0x29 -> return I64SegmentLoad
+      0x2A -> return F32SegmentLoad
+      0x2B -> return F64SegmentLoad
+      0x2C -> return I32SegmentLoad8S 
+      0x2D -> return I32SegmentLoad8U 
+      0x2E -> return I32SegmentLoad16S
+      0x2F -> return I32SegmentLoad16U
+      0x30 -> return I64SegmentLoad8S 
+      0x31 -> return I64SegmentLoad8U 
+      0x32 -> return I64SegmentLoad16S
+      0x33 -> return I64SegmentLoad16U
+      0x34 -> return I64SegmentLoad32S
+      0x35 -> return I64SegmentLoad32U
+      0x36 -> return I32SegmentStore
+      0x37 -> return I64SegmentStore
+      0x38 -> return F32SegmentStore
+      0x39 -> return F64SegmentStore
+      0x3A -> return I32SegmentStore8 
+      0x3B -> return I32SegmentStore16
+      0x3C -> return I64SegmentStore8 
+      0x3D -> return I64SegmentStore16
+      0x3E -> return I64SegmentStore32
       0x3F -> byteGuard 0x00 >> (return $ CurrentMemory)
       0x40 -> byteGuard 0x00 >> (return $ GrowMemory)
       -- MSWasm instructions

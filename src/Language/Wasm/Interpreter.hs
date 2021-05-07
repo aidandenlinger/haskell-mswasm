@@ -187,6 +187,22 @@ evalSegmentStore ctx@EvalCtx {stack = (VI64 v : VHandle w x y z : rest), segmem}
          in case result of
               Just mem -> return $ Done ctx {stack = rest, segmem = mem}
               Nothing -> return Trap
+evalSegmentStore ctx@EvalCtx {stack = (VF32 v : VHandle w x y z : rest), segmem}
+  = if isInvalidHandle (VHandle w x y z)
+      then return Trap
+      else
+        let result = storeToSegment segmem (VHandle w x y z) (VF32 v)
+         in case result of
+              Just mem -> return $ Done ctx {stack = rest, segmem = mem}
+              Nothing -> return Trap
+evalSegmentStore ctx@EvalCtx {stack = (VF64 v : VHandle w x y z : rest), segmem}
+  = if isInvalidHandle (VHandle w x y z)
+      then return Trap
+      else
+        let result = storeToSegment segmem (VHandle w x y z) (VF64 v)
+         in case result of
+              Just mem -> return $ Done ctx {stack = rest, segmem = mem}
+              Nothing -> return Trap
 evalSegmentStore _
   = return Trap
 
@@ -855,10 +871,10 @@ eval budget store FunctionInstance {funcType, moduleInstance, code = Function {l
       evalSegmentLoad ctx
     step ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem} I64SegmentLoad =
       evalSegmentLoad ctx
-    step ctx (F32Load MemArg {offset}) =
-      makeLoadInstr ctx offset 4 $ (\rest val -> Done ctx {stack = VF32 (wordToFloat val) : rest})
-    step ctx (F64Load MemArg {offset}) =
-      makeLoadInstr ctx offset 8 $ (\rest val -> Done ctx {stack = VF64 (wordToDouble val) : rest})
+    step ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem} F32SegmentLoad =
+      evalSegmentLoad ctx
+    step ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem} F64SegmentLoad =
+      evalSegmentLoad ctx
     step ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem} I32SegmentLoad8U =
       evalSegmentLoad ctx
     step ctx@EvalCtx {stack = (VHandle w x y z : rest), segmem} I32SegmentLoad8S =
@@ -881,21 +897,21 @@ eval budget store FunctionInstance {funcType, moduleInstance, code = Function {l
       evalSegmentLoad ctx
     step ctx@EvalCtx {stack = (VI32 v : VHandle w x y z : rest), segmem} I32SegmentStore =
       evalSegmentStore ctx
-    step ctx@EvalCtx {stack = (VI32 v : VHandle w x y z : rest), segmem} I64SegmentStore =
+    step ctx@EvalCtx {stack = (VI64 v : VHandle w x y z : rest), segmem} I64SegmentStore =
       evalSegmentStore ctx
-    step ctx@EvalCtx {stack = (VF32 f : rest)} (F32Store MemArg {offset}) =
-      makeStoreInstr ctx {stack = rest} offset 4 $ floatToWord f
-    step ctx@EvalCtx {stack = (VF64 f : rest)} (F64Store MemArg {offset}) =
-      makeStoreInstr ctx {stack = rest} offset 8 $ doubleToWord f
+    step ctx@EvalCtx {stack = (VF32 v : VHandle w x y z : rest), segmem} F32SegmentStore =
+      evalSegmentStore ctx
+    step ctx@EvalCtx {stack = (VF64 v : VHandle w x y z : rest), segmem} F64SegmentStore =
+      evalSegmentStore ctx
     step ctx@EvalCtx {stack = (VI32 v : VHandle w x y z : rest), segmem} I32SegmentStore8 =
       evalSegmentStore ctx
     step ctx@EvalCtx {stack = (VI32 v : VHandle w x y z : rest), segmem} I32SegmentStore16 =
       evalSegmentStore ctx
-    step ctx@EvalCtx {stack = (VI32 v : VHandle w x y z : rest), segmem} I64SegmentStore8 =
+    step ctx@EvalCtx {stack = (VI64 v : VHandle w x y z : rest), segmem} I64SegmentStore8 =
       evalSegmentStore ctx 
-    step ctx@EvalCtx {stack = (VI32 v : VHandle w x y z : rest), segmem} I64SegmentStore16 =
+    step ctx@EvalCtx {stack = (VI64 v : VHandle w x y z : rest), segmem} I64SegmentStore16 =
       evalSegmentStore ctx 
-    step ctx@EvalCtx {stack = (VI32 v : VHandle w x y z : rest), segmem} I64SegmentStore32 =
+    step ctx@EvalCtx {stack = (VI64 v : VHandle w x y z : rest), segmem} I64SegmentStore32 =
       evalSegmentStore ctx 
     step ctx@EvalCtx {stack = st} CurrentMemory = do
       let MemoryInstance {memory = memoryRef} = memInstances store ! (memaddrs moduleInstance ! 0)

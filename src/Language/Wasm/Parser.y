@@ -431,8 +431,8 @@ plaininstr :: { PlainInstr }
     -- memory instructions
     | 'i32.segment_load'             { I32SegmentLoad }
     | 'i64.segment_load'             { I64SegmentLoad }
-    | 'f32.load' memarg4             { F32Load $2 }
-    | 'f64.load' memarg8             { F64Load $2 }
+    | 'f32.segment_load'             { F32SegmentLoad }
+    | 'f64.segment_load'             { F64SegmentLoad }
     | 'i32.segment_load8_s'          { I32SegmentLoad8S }
     | 'i32.segment_load8_u'          { I32SegmentLoad8U }
     | 'i32.segment_load16_s'         { I32SegmentLoad16S }
@@ -445,8 +445,8 @@ plaininstr :: { PlainInstr }
     | 'i64.segment_load32_u'         { I64SegmentLoad32U }
     | 'i32.segment_store'            { I32SegmentStore }
     | 'i64.segment_store'            { I64SegmentStore }
-    | 'f32.store' memarg4            { F32Store $2 }
-    | 'f64.store' memarg8            { F64Store $2 }
+    | 'f32.segment_store'            { F32SegmentStore }
+    | 'f64.segment_store'            { F64SegmentStore }
     | 'i32.segment_store8'           { I32SegmentStore8 }
     | 'i32.segment_store16'          { I32SegmentStore16 }
     | 'i64.segment_store8'           { I64SegmentStore8 }
@@ -1277,8 +1277,8 @@ data PlainInstr =
     -- Memory instructions
     | I32SegmentLoad
     | I64SegmentLoad
-    | F32Load MemArg
-    | F64Load MemArg
+    | F32SegmentLoad
+    | F64SegmentLoad
     | I32SegmentLoad8S 
     | I32SegmentLoad8U 
     | I32SegmentLoad16S
@@ -1291,8 +1291,8 @@ data PlainInstr =
     | I64SegmentLoad32U
     | I32SegmentStore 
     | I64SegmentStore 
-    | F32Store MemArg
-    | F64Store MemArg
+    | F32SegmentStore
+    | F64SegmentStore
     | I32SegmentStore8 
     | I32SegmentStore16
     | I64SegmentStore8 
@@ -1723,8 +1723,8 @@ desugarize fields = do
                 Nothing -> Left "unknown global"
         synInstrToStruct _ (PlainInstr (I32SegmentLoad)) = return $ S.I32SegmentLoad
         synInstrToStruct _ (PlainInstr (I64SegmentLoad)) = return $ S.I64SegmentLoad
-        synInstrToStruct _ (PlainInstr (F32Load memArg)) = return $ S.F32Load memArg
-        synInstrToStruct _ (PlainInstr (F64Load memArg)) = return $ S.F64Load memArg
+        synInstrToStruct _ (PlainInstr (F32SegmentLoad)) = return $ S.F32SegmentLoad
+        synInstrToStruct _ (PlainInstr (F64SegmentLoad)) = return $ S.F64SegmentLoad
         synInstrToStruct _ (PlainInstr (I32SegmentLoad8S)) = return $ S.I32SegmentLoad8S
         synInstrToStruct _ (PlainInstr (I32SegmentLoad8U)) = return $ S.I32SegmentLoad8U
         synInstrToStruct _ (PlainInstr (I32SegmentLoad16S)) = return $ S.I32SegmentLoad16S
@@ -1737,8 +1737,8 @@ desugarize fields = do
         synInstrToStruct _ (PlainInstr (I64SegmentLoad32U)) = return $ S.I64SegmentLoad32U
         synInstrToStruct _ (PlainInstr (I32SegmentStore)) = return $ S.I32SegmentStore
         synInstrToStruct _ (PlainInstr (I64SegmentStore)) = return $ S.I64SegmentStore
-        synInstrToStruct _ (PlainInstr (F32Store memArg)) = return $ S.F32Store memArg
-        synInstrToStruct _ (PlainInstr (F64Store memArg)) = return $ S.F64Store memArg
+        synInstrToStruct _ (PlainInstr (F32SegmentStore)) = return $ S.F32SegmentStore
+        synInstrToStruct _ (PlainInstr (F64SegmentStore)) = return $ S.F64SegmentStore
         synInstrToStruct _ (PlainInstr (I32SegmentStore8)) = return $ S.I32SegmentStore8
         synInstrToStruct _ (PlainInstr (I32SegmentStore16)) = return $ S.I32SegmentStore16
         synInstrToStruct _ (PlainInstr (I64SegmentStore8)) = return $ S.I64SegmentStore8

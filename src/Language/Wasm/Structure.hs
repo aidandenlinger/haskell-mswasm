@@ -155,8 +155,8 @@ data Instruction index
   | -- Memory instructions
     I32SegmentLoad
   | I64SegmentLoad
-  | F32Load MemArg
-  | F64Load MemArg
+  | F32SegmentLoad
+  | F64SegmentLoad
   | I32SegmentLoad8S 
   | I32SegmentLoad8U 
   | I32SegmentLoad16S
@@ -169,8 +169,8 @@ data Instruction index
   | I64SegmentLoad32U
   | I32SegmentStore
   | I64SegmentStore
-  | F32Store MemArg
-  | F64Store MemArg
+  | F32SegmentStore
+  | F64SegmentStore
   | I32SegmentStore8 
   | I32SegmentStore16
   | I64SegmentStore8 
