@@ -13,6 +13,6 @@
   )
 
    (func (export "_main") (result i32)
-    (call $ms_segmentslice (i32.const 40) (i32.const 10))
+    (call $ms_segmentslice (i32.const 0) (i32.const 32))
  )
 )

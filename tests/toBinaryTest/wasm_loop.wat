@@ -19,7 +19,7 @@
         (i32.const 1)
         (i32.add)
         (set_local $i)
-        (br_if 1 (i32.eq (get_local $i) (i32.const 1000)))
+        (br_if 1 (i32.eq (get_local $i) (i32.const 10000)))
         (br 0)
       )
     )
@@ -28,6 +28,6 @@
   (export "loop" (func $loop))
 
    (func (export "_main") (result i32)
-      (call $loop (i32.const 5) (i32.const 10))
+      (call $loop)
    )
 )

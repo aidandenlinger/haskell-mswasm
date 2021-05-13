@@ -16,7 +16,7 @@
   )
 
   (func (export "_main") (result i64)
-    (call $ms_add64 (i64.const 1234567890) (i64.const 5))
+    (call $ms_add64 (i64.const 1234567890) (i64.const -1234567890))
   )
   
 )
