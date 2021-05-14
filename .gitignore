@@ -10,3 +10,4 @@ doc/
 setup-config
 wasm-*-docs.tar.gz
 stack.yaml.lock
+hie.yaml

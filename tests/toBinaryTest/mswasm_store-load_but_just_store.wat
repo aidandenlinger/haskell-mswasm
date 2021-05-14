@@ -1,0 +1,11 @@
+(module (memory 1)
+  (func $store_and_load (param $h handle) (param $i i32)
+    (get_local $h)
+    (get_local $i)
+    (i32.segment_store) 
+  ) (export "ms_store_and_load" (func $store_and_load))
+
+  (func (export "_main")
+    (call $store_and_load (new_segment (i32.const 8)) (i32.const 10))
+  )
+)

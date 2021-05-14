@@ -1,0 +1,12 @@
+(module (memory 1)
+ (func $ms_handle_set_offset (result i32)
+   (local $h handle)
+    (set_local $h (new_segment (i32.const 8)))
+    (handle.get_offset (handle.set_offset (get_local $h) (i32.const 16)))
+    (free_segment (get_local $h))
+  )
+
+ (func (export "_main") (result i32)
+    (call $ms_handle_set_offset)
+ )
+)
