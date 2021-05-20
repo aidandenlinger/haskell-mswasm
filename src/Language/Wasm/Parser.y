@@ -157,6 +157,29 @@ import Language.Wasm.Lexer (
 'i64.segment_store8'   { Lexeme _ (TKeyword "i64.segment_store8") }
 'i64.segment_store16'  { Lexeme _ (TKeyword "i64.segment_store16") }
 'i64.segment_store32'  { Lexeme _ (TKeyword "i64.segment_store32") }
+'i32.load'            { Lexeme _ (TKeyword "i32.load") }
+'i64.load'            { Lexeme _ (TKeyword "i64.load") }
+'f32.load'            { Lexeme _ (TKeyword "f32.load") }
+'f64.load'            { Lexeme _ (TKeyword "f64.load") }
+'i32.load8_s'         { Lexeme _ (TKeyword "i32.load8_s") }
+'i32.load8_u'         { Lexeme _ (TKeyword "i32.load8_u") }
+'i32.load16_s'        { Lexeme _ (TKeyword "i32.load16_s") }
+'i32.load16_u'        { Lexeme _ (TKeyword "i32.load16_u") }
+'i64.load8_s'         { Lexeme _ (TKeyword "i64.load8_s") }
+'i64.load8_u'         { Lexeme _ (TKeyword "i64.load8_u") }
+'i64.load16_s'        { Lexeme _ (TKeyword "i64.load16_s") }
+'i64.load16_u'        { Lexeme _ (TKeyword "i64.load16_u") }
+'i64.load32_s'        { Lexeme _ (TKeyword "i64.load32_s") }
+'i64.load32_u'        { Lexeme _ (TKeyword "i64.load32_u") }
+'i32.store'           { Lexeme _ (TKeyword "i32.store") }
+'i64.store'           { Lexeme _ (TKeyword "i64.store") }
+'f32.store'           { Lexeme _ (TKeyword "f32.store") }
+'f64.store'           { Lexeme _ (TKeyword "f64.store") }
+'i32.store8'          { Lexeme _ (TKeyword "i32.store8") }
+'i32.store16'         { Lexeme _ (TKeyword "i32.store16") }
+'i64.store8'          { Lexeme _ (TKeyword "i64.store8") }
+'i64.store16'         { Lexeme _ (TKeyword "i64.store16") }
+'i64.store32'         { Lexeme _ (TKeyword "i64.store32") }
 'current_memory'      { Lexeme _ (TKeyword "current_memory") }
 'grow_memory'         { Lexeme _ (TKeyword "grow_memory") }
 'memory.size'         { Lexeme _ (TKeyword "memory.size") }
@@ -448,6 +471,31 @@ plaininstr :: { PlainInstr }
     | 'i64.segment_store8'           { I64SegmentStore8 }
     | 'i64.segment_store16'          { I64SegmentStore16 }
     | 'i64.segment_store32'          { I64SegmentStore32 }
+    
+    | 'i32.load'                     { I32SegmentLoad }
+    | 'i64.load'                     { I64SegmentLoad }
+    | 'f32.load'                     { F32SegmentLoad }
+    | 'f64.load'                     { F64SegmentLoad }
+    | 'i32.load8_s'                  { I32SegmentLoad8S }
+    | 'i32.load8_u'                  { I32SegmentLoad8U }
+    | 'i32.load16_s'                 { I32SegmentLoad16S }
+    | 'i32.load16_u'                 { I32SegmentLoad16U }
+    | 'i64.load8_s'                  { I64SegmentLoad8S }
+    | 'i64.load8_u'                  { I64SegmentLoad8U }
+    | 'i64.load16_s'                 { I64SegmentLoad16S }
+    | 'i64.load16_u'                 { I64SegmentLoad16U }
+    | 'i64.load32_s'                 { I64SegmentLoad32S }
+    | 'i64.load32_u'                 { I64SegmentLoad32U }
+    | 'i32.store'                    { I32SegmentStore }
+    | 'i64.store'                    { I64SegmentStore }
+    | 'f32.store'                    { F32SegmentStore }
+    | 'f64.store'                    { F64SegmentStore }
+    | 'i32.store8'                   { I32SegmentStore8 }
+    | 'i32.store16'                  { I32SegmentStore16 }
+    | 'i64.store8'                   { I64SegmentStore8 }
+    | 'i64.store16'                  { I64SegmentStore16 }
+    | 'i64.store32'                  { I64SegmentStore32 }
+
     | 'current_memory'               { CurrentMemory }
     | 'grow_memory'                  { GrowMemory }
     | 'memory.size'                  { CurrentMemory }
