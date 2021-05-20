@@ -166,6 +166,7 @@ getResultType = do
     0x7E -> return [I64]
     0x7D -> return [F32]
     0x7C -> return [F64]
+    0x7B -> return [Handle]
     _ -> fail "unexpected byte in result type position"
 
 data SectionType

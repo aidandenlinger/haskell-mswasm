@@ -25,7 +25,6 @@
     )
     (i32.load (get_local $addr))
   )
-  (export "loop" (func $loop))
 
    (func (export "_main") (result i32)
       (call $loop)
