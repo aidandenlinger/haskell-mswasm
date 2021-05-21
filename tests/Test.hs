@@ -65,7 +65,7 @@ showFullModule input = do
     Left  reason -> putStrLn reason
 
 showModule :: String -> IO ()
-showModule s = Wasm.showModule s >>= putStrLn
+showModule s = Wasm.showModuleFromFile s >>= putStrLn
 
 -- | Hardcoded toModule to examine the binary bin.wasm in toBinaryTest
 toModuleHC :: IO ()
