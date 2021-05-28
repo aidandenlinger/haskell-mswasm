@@ -112,14 +112,132 @@ convertModule mod@Module {functions = t} = mod {functions = concatMap convertFun
     funFooter mem = [ GetLocal mem
                     , FreeSegment ]
 
-    convertInstr :: Int -> [(Struct.Instruction Natural, Int)] -> [Struct.Instruction Natural] -> 
-                    [Struct.Instruction Natural]
-    convertInstr mem stk acc (block@Block {Struct.body = b}):is
-      = convertInstr mem stk (block {Struct.body = convertInstr mem stk [] b} : acc) is
-    convertInstr mem (loop@Loop {Struct.body = b}):is
-      = loop {Struct.body = concatMap convertInstr mem b}
-    convertInstr mem br@If {Struct.true = t, Struct.false = f}
-      = br { Struct.true  = concatMap convertInstr mem t
-           , Struct.false = concatMap convertInstr mem f }
-    convertInstr e
-      = e -- e
+    --; convert list of instructions and return result
+    convertInstrs :: Int -> [ValueType] -> [Struct.Instruction Natural]
+                  -> [Struct.Instruction Natural]
+    convertInstrs mem args []     = []
+    convertInstrs mem args (i:is) = i' ++ convertInstrs mem args' is
+      where
+        (i', args') = convertInstr mem args i
+    
+
+    convertInstrHelper :: Int -> ValueType -> ValueType -> Struct.Instruction Natural
+                       -> [Struct.Instruction Natural]
+    convertInstrHelper mem expTy ty instr
+      | expTy == ty = [ instr ]
+      | otherwise   = [ instr
+                      , GetLocal mem
+                      , HandleSetOffset ]
+
+    pushArgs :: Struct.Instruction Natural -> [ValueType] -> ([ValueType], Maybe ValueType)
+    pushArgs instr as (as', res)
+      where
+        Arrow args res = getInstrType instr
+        as' = args ++ as
+
+
+    convertInstr :: Int -> [ValueType] -> Struct.Instruction Natural
+                 -> ([Struct.Instruction Natural], [ValueType])
+    convertInstr mem args   I32SegmentStore = ([I32SegmentStore], I32 : Handle : args)
+    convertInstr mem a:args I32SegmentLoad  = (instrs, Handle : args)
+      where
+        instrs = convertInstrHelper mem I32 a (I32SegmentLoad)
+    convertInstr mem a:args (I32Const n)    = (instrs, args)
+      where
+        instrs = convertInstrHelper mem I32 a (I32Const n)
+
+    convertInstr mem args Unreachable = return $ Any ==> Any
+    convertInstr mem args Nop = return $ empty ==> empty
+    convertInstr mem args Block {resultType, body} = 
+    convertInstr mem args Loop {resultType, body} = 
+    convertInstr mem args If {resultType, true, false} = 
+    convertInstr mem args (Br lbl) = 
+    convertInstr mem args (BrIf lbl) = 
+    convertInstr mem args (BrTable lbls lbl) = 
+    convertInstr mem args Return = 
+    convertInstr mem args (Call fun) = 
+    convertInstr mem args (CallIndirect sign) = 
+    convertInstr mem args Drop = 
+    convertInstr mem args Select = 
+    convertInstr mem args (GetLocal local) = 
+    convertInstr mem args (SetLocal local) = 
+    convertInstr mem args (TeeLocal local) = 
+    convertInstr mem args (GetGlobal global) = 
+    convertInstr mem args (SetGlobal global) = 
+    convertInstr mem args (I32SegmentLoad ) = return $ Handle ==> I32
+    convertInstr mem args (I64SegmentLoad ) = return $ Handle ==> I64
+    convertInstr mem args (F32SegmentLoad) = return $ Handle ==> F32
+    convertInstr mem args (F64SegmentLoad) = return $ Handle ==> F64
+    convertInstr mem args (I32SegmentLoad8S ) = return $ Handle ==> I32
+    convertInstr mem args (I32SegmentLoad8U ) = return $ Handle ==> I32
+    convertInstr mem args (I32SegmentLoad16S ) = return $ Handle ==> I32
+    convertInstr mem args (I32SegmentLoad16U ) = return $ Handle ==> I32
+    convertInstr mem args (I64SegmentLoad8S ) = return $ Handle ==> I64
+    convertInstr mem args (I64SegmentLoad8U ) = return $ Handle ==> I64
+    convertInstr mem args (I64SegmentLoad16S ) = return $ Handle ==> I64
+    convertInstr mem args (I64SegmentLoad16U ) = return $ Handle ==> I64
+    convertInstr mem args (I64SegmentLoad32S ) = return $ Handle ==> I64
+    convertInstr mem args (I64SegmentLoad32U ) = return $ Handle ==> I64
+    convertInstr mem args (I32SegmentStore ) = return $ [Handle, I32] ==> empty
+    convertInstr mem args (I64SegmentStore ) = return $ [Handle, I64] ==> empty
+    convertInstr mem args (F32SegmentStore) = return $ [Handle, F32] ==> empty
+    convertInstr mem args (F64SegmentStore) = return $ [Handle, F64] ==> empty
+    convertInstr mem args (I32SegmentStore8 ) = return $ [Handle, I32] ==> empty
+    convertInstr mem args (I32SegmentStore16 ) = return $ [Handle, I32] ==> empty
+    convertInstr mem args (I64SegmentStore8 ) = return $ [Handle, I64] ==> empty
+    convertInstr mem args (I64SegmentStore16 ) = return $ [Handle, I64] ==> empty
+    convertInstr mem args (I64SegmentStore32 ) = return $ [Handle, I64] ==> empty
+    convertInstr mem args CurrentMemory = 
+    convertInstr mem args NewSegment = return $ I32 ==> Handle
+    convertInstr mem args FreeSegment = return $ Handle ==> empty
+    convertInstr mem args SegmentSlice = return $ [Handle, I32, I32] ==> Handle
+    convertInstr mem args HandleSegmentLoad = return $ Handle ==> Handle
+    convertInstr mem args HandleSegmentStore = return $ [Handle, Handle] ==> empty
+    convertInstr mem args HandleAdd = return $ [I32, Handle] ==> Handle
+    convertInstr mem args HandleSub = return $ [I32, Handle] ==> Handle
+    convertInstr mem args HandleGetOffset = return $ Handle ==> I32
+    convertInstr mem args HandleSetOffset = return $ [I32, Handle] ==> Handle
+    convertInstr mem args (I32Const _) = return $ empty ==> I32
+    convertInstr mem args (I64Const _) = return $ empty ==> I64
+    convertInstr mem args (F32Const _) = return $ empty ==> F32
+    convertInstr mem args (F64Const _) = return $ empty ==> F64
+    convertInstr mem args (IUnOp BS32 _) = return $ I32 ==> I32
+    convertInstr mem args (IUnOp BS64 _) = return $ I64 ==> I64
+    convertInstr mem args (IBinOp BS32 _) = return $ [I32, I32] ==> I32
+    convertInstr mem args (IBinOp BS64 _) = return $ [I64, I64] ==> I64
+    convertInstr mem args I32Eqz = return $ I32 ==> I32
+    convertInstr mem args I64Eqz = return $ I64 ==> I32
+    convertInstr mem args (IRelOp BS32 _) = return $ [I32, I32] ==> I32
+    convertInstr mem args (IRelOp BS64 _) = return $ [I64, I64] ==> I32
+    convertInstr mem args (FUnOp BS32 _) = return $ F32 ==> F32
+    convertInstr mem args (FUnOp BS64 _) = return $ F64 ==> F64
+    convertInstr mem args (FBinOp BS32 _) = return $ [F32, F32] ==> F32
+    convertInstr mem args (FBinOp BS64 _) = return $ [F64, F64] ==> F64
+    convertInstr mem args (FRelOp BS32 _) = return $ [F32, F32] ==> I32
+    convertInstr mem args (FRelOp BS64 _) = return $ [F64, F64] ==> I32
+    convertInstr mem args I32WrapI64 = return $ I64 ==> I32
+    convertInstr mem args (ITruncFU BS32 BS32) = return $ F32 ==> I32
+    convertInstr mem args (ITruncFU BS32 BS64) = return $ F64 ==> I32
+    convertInstr mem args (ITruncFU BS64 BS32) = return $ F32 ==> I64
+    convertInstr mem args (ITruncFU BS64 BS64) = return $ F64 ==> I64
+    convertInstr mem args (ITruncFS BS32 BS32) = return $ F32 ==> I32
+    convertInstr mem args (ITruncFS BS32 BS64) = return $ F64 ==> I32
+    convertInstr mem args (ITruncFS BS64 BS32) = return $ F32 ==> I64
+    convertInstr mem args (ITruncFS BS64 BS64) = return $ F64 ==> I64
+    convertInstr mem args I64ExtendSI32 = return $ I32 ==> I64
+    convertInstr mem args I64ExtendUI32 = return $ I32 ==> I64
+    convertInstr mem args (FConvertIU BS32 BS32) = return $ I32 ==> F32
+    convertInstr mem args (FConvertIU BS32 BS64) = return $ I64 ==> F32
+    convertInstr mem args (FConvertIU BS64 BS32) = return $ I32 ==> F64
+    convertInstr mem args (FConvertIU BS64 BS64) = return $ I64 ==> F64
+    convertInstr mem args (FConvertIS BS32 BS32) = return $ I32 ==> F32
+    convertInstr mem args (FConvertIS BS32 BS64) = return $ I64 ==> F32
+    convertInstr mem args (FConvertIS BS64 BS32) = return $ I32 ==> F64
+    convertInstr mem args (FConvertIS BS64 BS64) = return $ I64 ==> F64
+    convertInstr mem args F32DemoteF64 = return $ F64 ==> F32
+    convertInstr mem args F64PromoteF32 = return $ F32 ==> F64
+    convertInstr mem args (IReinterpretF BS32) = return $ F32 ==> I32
+    convertInstr mem args (IReinterpretF BS64) = return $ F64 ==> I64
+    convertInstr mem args (FReinterpretI BS32) = return $ I32 ==> F32
+    convertInstr mem args (FReinterpretI BS64) = return $ I64 ==> F64
+    convertInstr mem args _ = error "Wrong instr or wrong type"
